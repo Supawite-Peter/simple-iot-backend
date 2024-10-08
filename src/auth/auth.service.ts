@@ -1,5 +1,6 @@
 import {
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -14,6 +15,10 @@ export class AuthService {
   ) {}
 
   async signIn(username: string, pass: string): Promise<any> {
+    if (!username || !pass) {
+      throw new InternalServerErrorException('Undefined username or password');
+    }
+    // Check if user exists
     const user = await this.usersService.findUsername(username);
     if (!user) {
       throw new NotFoundException("User doesn't exist");
