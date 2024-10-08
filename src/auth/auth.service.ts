@@ -13,15 +13,6 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  /**
-   * Signs in a user by their username and password.
-   * @param {string} username - The username to sign in.
-   * @param {string} pass - The password to sign in.
-   * @returns {Promise<any>} A promise that resolves with a JSON Web Token
-   * if the sign in was successful. If the username does not exist, the
-   * sign in fails with a NotFoundException. If the password does not match
-   * the hash, the sign in fails with an UnauthorizedException.
-   */
   async signIn(username: string, pass: string): Promise<any> {
     const user = await this.usersService.findUsername(username);
     if (!user) {
