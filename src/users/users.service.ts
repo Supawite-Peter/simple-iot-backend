@@ -13,14 +13,32 @@ export class UsersService {
   private readonly users: User[] = [];
   private usersIdCounter = 0;
 
+  /**
+   * Find a user by username.
+   * @param username The username
+   * @returns The user if found, undefined otherwise
+   */
   async findUsername(username: string): Promise<User | undefined> {
     return this.users.find((user) => user.username === username);
   }
 
+  /**
+   * Find a user by id.
+   * @param userId The id of the user
+   * @returns The user if found, undefined otherwise
+   */
   async findUserId(userId: number): Promise<User | undefined> {
     return this.users.find((user) => user.userId === userId);
   }
 
+  /**
+   * Registers a user.
+   * @param username The username
+   * @param password The password
+   * @returns Nothing
+   * @throws InternalServerErrorException if username or password is undefined
+   * @throws ConflictException if the username already exists
+   */
   async register(username: string, password: string): Promise<any> {
     if (username === undefined || password === undefined) {
       throw new InternalServerErrorException('Undefined username or password');
@@ -40,6 +58,15 @@ export class UsersService {
     return;
   }
 
+  /**
+   * Unregisters a user.
+   * @param username The username
+   * @param password The password
+   * @returns Nothing
+   * @throws InternalServerErrorException if username or password is undefined
+   * @throws NotFoundException if the user does not exist
+   * @throws UnauthorizedException if the password is incorrect
+   */
   async unregister(username: string, password: string): Promise<any> {
     if (username === undefined || password === undefined) {
       throw new InternalServerErrorException('Undefined username or password');
@@ -55,6 +82,12 @@ export class UsersService {
     return;
   }
 
+  /**
+   * Check if a password matches a hash.
+   * @param password The password to check
+   * @param hash The hash to compare with
+   * @returns True if the password matches the hash, false otherwise
+   */
   async checkHash(password: string, hash: string): Promise<boolean> {
     return await bcrypt.compare(password, hash);
   }

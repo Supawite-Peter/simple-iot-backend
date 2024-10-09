@@ -14,6 +14,15 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  /**
+   * Sign in a user with a given username and password.
+   * @param username The username
+   * @param pass The password
+   * @throws InternalServerErrorException if the username or password is undefined
+   * @throws NotFoundException if the user does not exist
+   * @throws UnauthorizedException if the password is incorrect
+   * @returns a jwt token
+   */
   async signIn(username: string, pass: string): Promise<any> {
     if (!username || !pass) {
       throw new InternalServerErrorException('Undefined username or password');

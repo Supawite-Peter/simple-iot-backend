@@ -16,6 +16,16 @@ export class AuthGuard implements CanActivate {
     private refactor: Reflector,
   ) {}
 
+  /**
+   * Checks if the route is public, if it is, returns true immediately.
+   * If the route is private, extracts the token from the request headers,
+   * verifies it, and throws an UnauthorizedException if it's not valid.
+   * If the token is valid, sets the user property in the request
+   * and returns true.
+   * @param context the execution context
+   * @returns a promise that resolves to a boolean indicating
+   * whether the route is accessible or not.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Get the IS_PUBLIC_KEY metadata
     const isPublic = this.refactor.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
