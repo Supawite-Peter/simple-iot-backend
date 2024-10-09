@@ -16,9 +16,8 @@ export class UsersController {
     );
   }
 
-  @Public()
   @Delete('unregister')
-  delete(@Body() registerDto: RegisterDto) {
+  unregister(@Body() registerDto: RegisterDto) {
     return this.usersService.unregister(
       registerDto.username,
       registerDto.password,
