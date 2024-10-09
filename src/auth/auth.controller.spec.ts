@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let service: AuthService;
+  const result = { access_token: 'jwttoken' };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -13,14 +13,13 @@ describe('AuthController', () => {
       .useMocker((token) => {
         if (token === AuthService) {
           return {
-            signIn: jest.fn(),
+            signIn: jest.fn().mockResolvedValue(result),
           };
         }
       })
       .compile();
 
     controller = module.get(AuthController);
-    service = module.get(AuthService);
   });
 
   it('should be defined', () => {
@@ -29,8 +28,6 @@ describe('AuthController', () => {
 
   describe('signIn', () => {
     it('should return assess token if sign in successfully', async () => {
-      const result = { access_token: 'jwttoken' };
-      jest.spyOn(service, 'signIn').mockResolvedValue(result);
       expect(
         await controller.signIn({
           username: 'exist',
