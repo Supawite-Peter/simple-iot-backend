@@ -3,6 +3,7 @@ import {
   NotFoundException,
   UnauthorizedException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { User } from './interfaces/users.interface';
 import * as bcrypt from 'bcrypt';
@@ -21,9 +22,12 @@ export class UsersService {
   }
 
   async register(username: string, password: string): Promise<any> {
+    if (username === undefined || password === undefined) {
+      throw new InternalServerErrorException('Undefined username or password');
+    }
     // Check if username already exists
     if (await this.findUsername(username)) {
-      return new ConflictException('Username already exists');
+      throw new ConflictException('Username already exists');
     }
     // Register user
     this.usersIdCounter += 1;
@@ -37,12 +41,15 @@ export class UsersService {
   }
 
   async unregister(username: string, password: string): Promise<any> {
+    if (username === undefined || password === undefined) {
+      throw new InternalServerErrorException('Undefined username or password');
+    }
     const user = await this.findUsername(username);
     if (!user) {
-      return new NotFoundException('User does not exist');
+      throw new NotFoundException('User does not exist');
     }
     if (!(await this.checkHash(password, user.hash))) {
-      return new UnauthorizedException('Incorrect password');
+      throw new UnauthorizedException('Incorrect password');
     }
     this.users.splice(this.users.indexOf(user), 1);
     return;
