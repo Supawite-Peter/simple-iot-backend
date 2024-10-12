@@ -41,7 +41,7 @@ export class DevicesController {
     return this.devicesService.getDevicesList(req.user.sub);
   }
 
-  @Post('addtopic')
+  @Post('topics')
   addTopic(
     @Request() req,
     @Body('topics', ParseArrayPipe) topics: string[],
@@ -50,7 +50,7 @@ export class DevicesController {
     return this.devicesService.addDeviceTopics(req.user.sub, device_id, topics);
   }
 
-  @Delete('removetopic')
+  @Delete('topics')
   removeTopic(
     @Request() req,
     @Body('topics', ParseArrayPipe) topics: string[],
