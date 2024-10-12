@@ -14,13 +14,13 @@ export class DevicesService {
   private device_counter = 0;
 
   async register(
-    owner_name: string,
-    owner_id: number,
+    requester_name: string,
+    requester_id: number,
     device_name: string,
     device_topics: string[],
   ): Promise<any> {
     // Check if user exists
-    await this.checkUserExist(owner_id);
+    await this.checkUserExist(requester_id);
 
     // Check Input
     if (device_name === undefined) {
@@ -33,8 +33,8 @@ export class DevicesService {
     // Register device
     this.device_counter += 1;
     const device: Device = {
-      owner_name: owner_name,
-      owner_id: owner_id,
+      owner_name: requester_name,
+      owner_id: requester_id,
       device_id: this.device_counter,
       device_name: device_name,
       device_topics: device_topics,
@@ -46,7 +46,7 @@ export class DevicesService {
 
   async unregister(requester_id: number, device_id: number): Promise<any> {
     // Get device
-    const device = await this.getAndcheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
     // Unregister device
     this.devices.splice(this.devices.indexOf(device), 1);
     return;
@@ -64,7 +64,7 @@ export class DevicesService {
     topics: string[] | string,
   ): Promise<any> {
     // Get device
-    const device = await this.getAndcheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
 
     // if topics is a string, convert it to an array
     if (typeof topics === 'string') {
@@ -72,7 +72,7 @@ export class DevicesService {
     }
 
     // Get unique topics that are not already registered
-    const unique_topics = new Set();
+    const unique_topics: Set<string> = new Set();
     for (const topic of topics) {
       if (!device.device_topics.includes(topic)) {
         unique_topics.add(topic);
@@ -83,7 +83,7 @@ export class DevicesService {
       throw new BadRequestException('Topics are already registered');
     }
     // Register topics
-    device.device_topics = [...device.device_topics, ...topics];
+    device.device_topics = [...device.device_topics, ...unique_topics];
     return {
       topics_added: unique_topics.size,
       topics: Array.from(unique_topics),
@@ -96,7 +96,7 @@ export class DevicesService {
     topics: string[] | string,
   ): Promise<any> {
     // Get device
-    const device = await this.getAndcheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
     // if topics is a string, convert it to an array
     if (typeof topics === 'string') {
       topics = [topics];
@@ -138,12 +138,12 @@ export class DevicesService {
     return true;
   }
 
-  private async getAndcheckDeviceOwner(
+  private async getAndCheckDeviceOwner(
     device_id: number,
     requester_id: number,
   ): Promise<Device> {
     // Check if user exists
-    await this.usersService.findUserId(requester_id);
+    await this.checkUserExist(requester_id);
     // Check if device id exists
     const device = this.findDeviceId(device_id);
     if (!device) {
