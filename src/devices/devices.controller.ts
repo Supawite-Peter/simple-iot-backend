@@ -5,17 +5,27 @@ import {
   Request,
   Delete,
   Body,
+  Param,
   UsePipes,
   ParseIntPipe,
   ParseArrayPipe,
 } from '@nestjs/common';
 import { DevicesService } from './devices.service';
+import { DevicesDataService } from './data/data.service';
 import { RegisterDto, registerSchema } from './dto/register.dto';
+import { DevicesDataDto, devicesDataSchema } from './dto/data.dto';
+import {
+  DevicesDataPeriodicDto,
+  devicesDataPeriodicSchema,
+} from './dto/data-periodic.dto';
 import { ZodValidationPipe } from '../zod.validation.pipe';
 
 @Controller('devices')
 export class DevicesController {
-  constructor(private devicesService: DevicesService) {}
+  constructor(
+    private devicesService: DevicesService,
+    private devicesDataService: DevicesDataService,
+  ) {}
 
   @Post('register')
   @UsePipes(new ZodValidationPipe(registerSchema))
@@ -61,5 +71,58 @@ export class DevicesController {
       device_id,
       topics,
     );
+  }
+
+  @Post(':device_id/:topic')
+  updateValue(
+    @Request() req,
+    @Body(new ZodValidationPipe(devicesDataSchema))
+    devicesDataDto: DevicesDataDto,
+    @Param('device_id', ParseIntPipe) device_id: number,
+    @Param('topic') topic: string,
+  ) {
+    return this.devicesService
+      .checkDeviceTopic(req.user.sub, device_id, topic)
+      .then(() => {
+        return this.devicesDataService.updateData(
+          device_id,
+          topic,
+          devicesDataDto.values,
+        );
+      });
+  }
+
+  @Get(':device_id/:topic/latest')
+  getLastestData(
+    @Request() req,
+    @Param('device_id', ParseIntPipe) device_id: number,
+    @Param('topic') topic: string,
+  ) {
+    return this.devicesService
+      .checkDeviceTopic(req.user.sub, device_id, topic)
+      .then(() => {
+        return this.devicesDataService.getLastestData(device_id, topic);
+      });
+  }
+
+  @Get(':device_id/:topic/period')
+  getPeriodictData(
+    @Request() req,
+    @Body(new ZodValidationPipe(devicesDataPeriodicSchema))
+    devicesDataPeriodicDto: DevicesDataPeriodicDto,
+    @Param('device_id', ParseIntPipe)
+    device_id: number,
+    @Param('topic') topic: string,
+  ) {
+    return this.devicesService
+      .checkDeviceTopic(req.user.sub, device_id, topic)
+      .then(() => {
+        return this.devicesDataService.getPeriodicData(
+          device_id,
+          topic,
+          devicesDataPeriodicDto.from,
+          devicesDataPeriodicDto.to,
+        );
+      });
   }
 }
