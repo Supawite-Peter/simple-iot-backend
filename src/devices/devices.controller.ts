@@ -93,7 +93,7 @@ export class DevicesController {
   }
 
   @Get(':device_id/:topic/latest')
-  getLastestData(
+  getLatestData(
     @Request() req,
     @Param('device_id', ParseIntPipe) device_id: number,
     @Param('topic') topic: string,
@@ -101,12 +101,12 @@ export class DevicesController {
     return this.devicesService
       .checkDeviceTopic(req.user.sub, device_id, topic)
       .then(() => {
-        return this.devicesDataService.getLastestData(device_id, topic);
+        return this.devicesDataService.getLatestData(device_id, topic);
       });
   }
 
-  @Get(':device_id/:topic/period')
-  getPeriodictData(
+  @Get(':device_id/:topic/periodic')
+  getPeriodicData(
     @Request() req,
     @Body(new ZodValidationPipe(devicesDataPeriodicSchema))
     devicesDataPeriodicDto: DevicesDataPeriodicDto,
