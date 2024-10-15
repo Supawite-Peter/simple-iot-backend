@@ -157,4 +157,16 @@ export class DevicesService {
     }
     return device;
   }
+
+  async checkDeviceTopic(
+    requester_id: number,
+    device_id: number,
+    topic: string,
+  ): Promise<boolean> {
+    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
+    if (!device.device_topics.includes(topic)) {
+      throw new BadRequestException('Topic is not registered');
+    }
+    return true;
+  }
 }

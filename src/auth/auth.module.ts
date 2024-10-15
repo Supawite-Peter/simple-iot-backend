@@ -4,13 +4,9 @@ import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [
     UsersModule,
-    ConfigModule.forRoot({
-      envFilePath: ['.env', '.env.example'],
-    }),
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
