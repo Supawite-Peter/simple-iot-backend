@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Data } from './schemas/data.schema';
 import { Document, Model, Types, MergeType } from 'mongoose';
@@ -17,12 +17,18 @@ export class DevicesDataService {
   ): Promise<Data | Data[]> {
     if (typeof values === 'number') {
       return await this.updateSingleData(device_id, topic, values);
+    } else if (values.length === 1) {
+      return await this.updateSingleData(device_id, topic, values[0]);
     } else {
       return await this.updateMultipleData(device_id, topic, values);
     }
   }
 
-  async updateSingleData(device_id: number, topic: string, value: number) {
+  private async updateSingleData(
+    device_id: number,
+    topic: string,
+    value: number,
+  ) {
     return await this.dataModel
       .create({
         timestamp: new Date(),
@@ -35,7 +41,11 @@ export class DevicesDataService {
       .then((doc) => this.mapDocumentstoData(doc));
   }
 
-  async updateMultipleData(device_id: number, topic: string, values: number[]) {
+  private async updateMultipleData(
+    device_id: number,
+    topic: string,
+    values: number[],
+  ) {
     const incoming_data = [];
     const current_date = new Date();
     for (const value of values) {
@@ -53,7 +63,7 @@ export class DevicesDataService {
     });
   }
 
-  getLastestData(device_id: number, topic: string): Promise<Data> {
+  async getLatestData(device_id: number, topic: string): Promise<Data> {
     return this.dataModel
       .find({
         'metadata.device_id': device_id,
@@ -62,7 +72,12 @@ export class DevicesDataService {
       .sort({ timestamp: -1 })
       .limit(1)
       .exec()
-      .then((docs) => this.mapDocumentsArrayToDataArray(docs)[0]);
+      .then((docs) => {
+        if (docs.length === 0) {
+          throw new NotFoundException('No Latest Data Found');
+        }
+        return this.mapDocumentsArrayToDataArray(docs)[0];
+      });
   }
 
   async getPeriodicData(
@@ -79,7 +94,12 @@ export class DevicesDataService {
       })
       .sort({ timestamp: -1 })
       .exec()
-      .then((docs) => this.mapDocumentsArrayToDataArray(docs));
+      .then((docs) => {
+        if (docs.length === 0) {
+          throw new NotFoundException('No Data Found From The Given Period');
+        }
+        return this.mapDocumentsArrayToDataArray(docs);
+      });
   }
 
   private mapDocumentstoData(
