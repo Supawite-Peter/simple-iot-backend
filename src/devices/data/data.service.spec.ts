@@ -17,7 +17,7 @@ describe('DeviceDataService', () => {
       providers: [
         DevicesDataService,
         {
-          provide: getModelToken('Data'),
+          provide: getModelToken('Data', 'devices'),
           useValue: {
             find: jest.fn().mockImplementation(() => ({
               sort: jest.fn().mockImplementation(() => ({
@@ -42,7 +42,7 @@ describe('DeviceDataService', () => {
     }).compile();
 
     service = module.get<DevicesDataService>(DevicesDataService);
-    model = module.get<Model<Data>>(getModelToken('Data'));
+    model = module.get<Model<Data>>(getModelToken('Data', 'devices'));
   });
 
   it('should be defined', () => {

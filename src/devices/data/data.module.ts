@@ -5,7 +5,10 @@ import { DevicesDataService } from './data.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Data.name, schema: DataSchema }]),
+    MongooseModule.forFeature(
+      [{ name: Data.name, schema: DataSchema }],
+      'devices',
+    ),
   ],
   providers: [DevicesDataService],
   exports: [DevicesDataService],
