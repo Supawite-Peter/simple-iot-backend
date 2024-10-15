@@ -5,19 +5,18 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { Device } from './interfaces/device.interface';
 import { InjectModel } from '@nestjs/mongoose';
-import { Devices } from './schemas/devices.schema';
-import { DevicesCounter } from './schemas/devices-counter.schema';
+import { Device } from './schemas/device.schema';
+import { DeviceCounter } from './schemas/device-counter.schema';
 import { Model } from 'mongoose';
 
 @Injectable()
 export class DevicesService {
   constructor(
     private usersService: UsersService,
-    @InjectModel(Devices.name, 'devices') private devicesModel: Model<Devices>,
-    @InjectModel(DevicesCounter.name, 'devices')
-    private devicesCounterModel: Model<DevicesCounter>,
+    @InjectModel(Device.name, 'devices') private devicesModel: Model<Device>,
+    @InjectModel(DeviceCounter.name, 'devices')
+    private devicesCounterModel: Model<DeviceCounter>,
   ) {}
 
   async register(
@@ -153,11 +152,11 @@ export class DevicesService {
     return true;
   }
 
-  private async getDeviceCounter(): Promise<DevicesCounter> {
+  private async getDeviceCounter(): Promise<DeviceCounter> {
     return this.devicesCounterModel.findOne().exec();
   }
 
-  private async initDeviceCounter(val: number): Promise<DevicesCounter> {
+  private async initDeviceCounter(val: number): Promise<DeviceCounter> {
     return this.devicesCounterModel.create({ counter: val });
   }
 
@@ -173,7 +172,7 @@ export class DevicesService {
     return counter_doc.counter + 1;
   }
 
-  private async findDeviceId(device_id: number): Promise<Devices> {
+  private async findDeviceId(device_id: number): Promise<Device> {
     return this.devicesModel
       .findOne({
         device_id: device_id,
@@ -199,7 +198,7 @@ export class DevicesService {
             `No devices found for user with id ${owner_id}`,
           );
         }
-        return docs;
+        return docs.map((doc) => doc.toObject());
       });
   }
 

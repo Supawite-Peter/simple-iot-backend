@@ -3,22 +3,22 @@ import { DevicesController } from './devices.controller';
 import { DevicesService } from './devices.service';
 import { UsersModule } from 'src/users/users.module';
 import { DevicesDataModule } from './data/data.module';
-import { DevicesSchema } from './schemas/devices.schema';
-import { DevicesCounterSchema } from './schemas/devices-counter.schema';
+import { DeviceSchema } from './schemas/device.schema';
+import { DeviceCounterSchema } from './schemas/device-counter.schema';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Devices } from './schemas/devices.schema';
-import { DevicesCounter } from './schemas/devices-counter.schema';
+import { Device } from './schemas/device.schema';
+import { DeviceCounter } from './schemas/device-counter.schema';
 
 @Module({
   imports: [
     UsersModule,
     DevicesDataModule,
     MongooseModule.forFeature(
-      [{ name: Devices.name, schema: DevicesSchema }],
+      [{ name: Device.name, schema: DeviceSchema }],
       'devices',
     ),
     MongooseModule.forFeature(
-      [{ name: DevicesCounter.name, schema: DevicesCounterSchema }],
+      [{ name: DeviceCounter.name, schema: DeviceCounterSchema }],
       'devices',
     ),
   ],

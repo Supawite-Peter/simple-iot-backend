@@ -37,7 +37,7 @@ export class AuthService {
       throw new UnauthorizedException('Incorrect password');
     }
     // Generate JWT
-    const payload = { sub: user.userId, username: user.username };
+    const payload = { sub: user.user_id, username: user.username };
     return {
       access_token: await this.jwtService.signAsync(payload),
     };

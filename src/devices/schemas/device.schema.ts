@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-export type DevicesDocument = HydratedDocument<Devices>;
+export type DeviceDocument = HydratedDocument<Device>;
 
 @Schema({
   toObject: {
@@ -11,7 +11,7 @@ export type DevicesDocument = HydratedDocument<Devices>;
     },
   },
 })
-export class Devices {
+export class Device {
   @Prop()
   owner_id: number;
 
@@ -28,4 +28,4 @@ export class Devices {
   device_topics: string[];
 }
 
-export const DevicesSchema = SchemaFactory.createForClass(Devices);
+export const DeviceSchema = SchemaFactory.createForClass(Device);
