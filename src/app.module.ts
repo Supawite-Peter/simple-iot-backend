@@ -13,7 +13,7 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule.forRoot({
       envFilePath: ['.env.local', '.env.example'],
     }),
-    MongooseModule.forRoot(process.env.MONGODB_URI_DEVICES),
+    MongooseModule.forRoot(process.env.DEVICES_MONGODB_URI),
   ],
   controllers: [],
   providers: [],
