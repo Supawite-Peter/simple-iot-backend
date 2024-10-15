@@ -2,27 +2,35 @@
 
 ## Description
 
-A simple IoT back-end server based on nest.js framework.
+A simple IoT back-end server application based on the Nest.js framework. Supporting user/device registration and database services.
 
-## Features
+## Planning Features
 
-- Users Authentication API
-- Users Management API
-- Devices Management API
-- Devices Status API
+- :white_check_mark: Users Management Module
+- :white_check_mark: Users Authentication Module 
+- :white_check_mark: Devices Management Module
+- :white_check_mark: Devices Data Module
+- :black_square_button:MonogoDB implementation on Users/Devices Module
+- :black_square_button:API Docs
+- :black_square_button:e2e Test
+- :black_square_button:MQTT Support
+- :black_square_button:Simple Web Front-end
+- ...
 
-## To-Do
+## Requirements
 
-- SQL/noSQL database integration
-- API Swagger Page
-- Devices Status MQTT Support
-- GraphQL integration
+1. Node.js (version >= 16)
+2. MongoDB (Tested on 8.0)
 
 ## Project setup
 
-```bash
-$ npm install
-```
+1. Clone this project and install node.js packages
+
+    ```bash
+    $ npm install
+    ```
+
+2. Update environment variables in `.env.example`
 
 ## Compile and run the project
 
@@ -37,15 +45,11 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+The application should be serving on port `3000`. (Default)
+
 ## Run tests
 
 ```bash
 # unit tests
 $ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
 ```
