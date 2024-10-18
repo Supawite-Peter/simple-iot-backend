@@ -51,7 +51,7 @@ export class UsersService {
    * Registers a user.
    * @param username The username
    * @param password The password
-   * @returns Nothing
+   * @returns The user id and username
    * @throws InternalServerErrorException if username or password is undefined
    * @throws ConflictException if the username already exists
    */
@@ -70,7 +70,10 @@ export class UsersService {
       username: username,
       hash: await bcrypt.hash(password, 10),
     });
-    return;
+    return {
+      user_id: current_counter,
+      username: username,
+    };
   }
 
   /**
