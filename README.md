@@ -11,8 +11,8 @@ A simple IoT back-end server application based on the Nest.js framework. Support
 - :white_check_mark: Devices Management Module
 - :white_check_mark: Devices Data Module
 - :white_check_mark: MonogoDB implementation on Users/Devices Module
-- :black_square_button: API Docs
 - :black_square_button: Support Timestamp in Devices Data Service
+- :black_square_button: API Docs
 - :black_square_button: e2e Test
 - :black_square_button: MQTT Support
 - :black_square_button: Simple Web Front-end
