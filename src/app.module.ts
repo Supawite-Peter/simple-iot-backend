@@ -5,10 +5,12 @@ import { UsersModule } from './users/users.module';
 import { DevicesModule } from './devices/devices.module';
 import { MongooseModule } from '@nestjs/mongoose';
 
+const ENV = process.env.NODE_ENV;
+
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['.env.local', '.env.example'],
+      envFilePath: !ENV ? '.env' : `.env.${ENV}.local`,
       isGlobal: true,
     }),
     UsersModule,
