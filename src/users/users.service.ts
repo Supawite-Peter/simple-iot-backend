@@ -5,37 +5,53 @@ import {
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { User } from './interfaces/users.interface';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User } from './schemas/user.schema';
+import { UserCounter } from './schemas/user-counter.schema';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  private readonly users: User[] = [];
-  private usersIdCounter = 0;
+  constructor(
+    @InjectModel(User.name, 'users') private usersModel: Model<User>,
+    @InjectModel(UserCounter.name, 'users')
+    private usersCounterModel: Model<UserCounter>,
+  ) {}
 
   /**
    * Find a user by username.
-   * @param username The username
+   * @param target_name The target username
    * @returns The user if found, undefined otherwise
    */
-  async findUsername(username: string): Promise<User | undefined> {
-    return this.users.find((user) => user.username === username);
+  async findUsername(target_name: string): Promise<User | undefined> {
+    return this.usersModel.findOne({ username: target_name }).then((user) => {
+      if (user) {
+        return user;
+      }
+      return undefined;
+    });
   }
 
   /**
    * Find a user by id.
-   * @param userId The id of the user
+   * @param target_id The target id of the user
    * @returns The user if found, undefined otherwise
    */
-  async findUserId(userId: number): Promise<User | undefined> {
-    return this.users.find((user) => user.userId === userId);
+  async findUserId(target_id: number): Promise<User | undefined> {
+    return this.usersModel.findOne({ user_id: target_id }).then((user) => {
+      if (user) {
+        return user;
+      }
+      return undefined;
+    });
   }
 
   /**
    * Registers a user.
    * @param username The username
    * @param password The password
-   * @returns Nothing
+   * @returns The user id and username
    * @throws InternalServerErrorException if username or password is undefined
    * @throws ConflictException if the username already exists
    */
@@ -48,14 +64,16 @@ export class UsersService {
       throw new ConflictException('Username already exists');
     }
     // Register user
-    this.usersIdCounter += 1;
-    const userId = this.usersIdCounter;
-    this.users.push({
-      userId: userId,
+    const current_counter = await this.getAndIncreaseCounter();
+    await this.usersModel.create({
+      user_id: current_counter,
       username: username,
       hash: await bcrypt.hash(password, 10),
     });
-    return;
+    return {
+      user_id: current_counter,
+      username: username,
+    };
   }
 
   /**
@@ -68,18 +86,21 @@ export class UsersService {
    * @throws UnauthorizedException if the password is incorrect
    */
   async unregister(username: string, password: string): Promise<any> {
+    // Check if username and password are defined
     if (username === undefined || password === undefined) {
       throw new InternalServerErrorException('Undefined username or password');
     }
+    // Check if user exists
     const user = await this.findUsername(username);
     if (!user) {
       throw new NotFoundException('User does not exist');
     }
+    // Check password
     if (!(await this.checkHash(password, user.hash))) {
       throw new UnauthorizedException('Incorrect password');
     }
-    this.users.splice(this.users.indexOf(user), 1);
-    return;
+    // Delete user
+    return this.usersModel.deleteOne({ user_id: user.user_id }).exec();
   }
 
   /**
@@ -90,5 +111,25 @@ export class UsersService {
    */
   async checkHash(password: string, hash: string): Promise<boolean> {
     return await bcrypt.compare(password, hash);
+  }
+
+  private async getAndIncreaseCounter(): Promise<number> {
+    const counter_doc = await this.getCounter();
+    if (counter_doc === null) {
+      await this.initCounter(1);
+      return 1;
+    }
+    await this.usersCounterModel
+      .findOneAndUpdate({}, { counter: counter_doc.counter + 1 })
+      .exec();
+    return counter_doc.counter + 1;
+  }
+
+  private async getCounter(): Promise<UserCounter> {
+    return this.usersCounterModel.findOne().exec();
+  }
+
+  private async initCounter(val: number): Promise<UserCounter> {
+    return this.usersCounterModel.create({ counter: val });
   }
 }

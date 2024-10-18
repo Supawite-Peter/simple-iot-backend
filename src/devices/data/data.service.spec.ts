@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesDataService } from './data.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Document, Model } from 'mongoose';
 import { Data } from './schemas/data.schema';
 import { NotFoundException } from '@nestjs/common';
 
@@ -17,7 +17,7 @@ describe('DeviceDataService', () => {
       providers: [
         DevicesDataService,
         {
-          provide: getModelToken('Data'),
+          provide: getModelToken('Data', 'devices'),
           useValue: {
             find: jest.fn().mockImplementation(() => ({
               sort: jest.fn().mockImplementation(() => ({
@@ -42,7 +42,10 @@ describe('DeviceDataService', () => {
     }).compile();
 
     service = module.get<DevicesDataService>(DevicesDataService);
-    model = module.get<Model<Data>>(getModelToken('Data'));
+    model = module.get<Model<Data>>(getModelToken('Data', 'devices'));
+    jest
+      .spyOn(Document.prototype, 'toObject')
+      .mockImplementation(() => ({}) as any);
   });
 
   it('should be defined', () => {
@@ -59,7 +62,9 @@ describe('DeviceDataService', () => {
         },
         value: 1,
       };
-      jest.spyOn(model, 'create').mockResolvedValueOnce(mockData as any);
+      jest.spyOn(model, 'create').mockResolvedValueOnce({
+        toObject: () => mockData,
+      } as any);
       expect(
         await service.updateData(
           mockData.metadata.device_id,
@@ -78,7 +83,9 @@ describe('DeviceDataService', () => {
         },
         value: 2,
       };
-      jest.spyOn(model, 'create').mockResolvedValueOnce(mockData as any);
+      jest.spyOn(model, 'create').mockResolvedValueOnce({
+        toObject: () => mockData,
+      } as any);
       expect(
         await service.updateData(
           mockData.metadata.device_id,
@@ -89,32 +96,38 @@ describe('DeviceDataService', () => {
     });
 
     it('should update multiple data if input values is an array with multiple numbers', async () => {
+      const mockData1 = {
+        timestamp: new Date(),
+        metadata: {
+          device_id: 1,
+          topic: 'test',
+        },
+        value: 2,
+      };
+      const mockData2 = {
+        timestamp: new Date(),
+        metadata: {
+          device_id: 1,
+          topic: 'test',
+        },
+        value: 3,
+      };
       const mockData = [
         {
-          timestamp: new Date(),
-          metadata: {
-            device_id: 1,
-            topic: 'test',
-          },
-          value: 2,
+          toObject: () => mockData1,
         },
         {
-          timestamp: new Date(),
-          metadata: {
-            device_id: 1,
-            topic: 'test',
-          },
-          value: 3,
+          toObject: () => mockData2,
         },
       ];
       jest.spyOn(model, 'insertMany').mockResolvedValueOnce(mockData as any);
       expect(
         await service.updateData(
-          mockData[0].metadata.device_id,
-          mockData[0].metadata.topic,
-          [mockData[0].value, mockData[1].value],
+          mockData1.metadata.device_id,
+          mockData1.metadata.topic,
+          [mockData1.value, mockData2.value],
         ),
-      ).toEqual(mockData);
+      ).toEqual([mockData1, mockData2]);
     });
   });
 
@@ -128,7 +141,11 @@ describe('DeviceDataService', () => {
         },
         value: 2,
       };
-      mockFindSortLimitExec = [mockData];
+      mockFindSortLimitExec = [
+        {
+          toObject: () => mockData,
+        },
+      ];
       expect(
         await service.getLatestData(
           mockData.metadata.device_id,
@@ -170,7 +187,11 @@ describe('DeviceDataService', () => {
         },
         value: 2,
       };
-      mockFindSortExce = [mockData];
+      mockFindSortExce = [
+        {
+          toObject: () => mockData,
+        },
+      ];
       expect(
         await service.getPeriodicData(
           mockData.metadata.device_id,

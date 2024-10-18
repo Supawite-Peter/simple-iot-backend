@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Data } from './schemas/data.schema';
-import { Document, Model, Types, MergeType } from 'mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class DevicesDataService {
   constructor(
-    @InjectModel(Data.name)
+    @InjectModel(Data.name, 'devices')
     private dataModel: Model<Data>,
   ) {}
 
@@ -29,8 +29,8 @@ export class DevicesDataService {
     topic: string,
     value: number,
   ) {
-    return await this.dataModel
-      .create({
+    return (
+      await this.dataModel.create({
         timestamp: new Date(),
         metadata: {
           device_id: device_id,
@@ -38,7 +38,7 @@ export class DevicesDataService {
         },
         value: value,
       })
-      .then((doc) => this.mapDocumentstoData(doc));
+    ).toObject();
   }
 
   private async updateMultipleData(
@@ -59,7 +59,7 @@ export class DevicesDataService {
       });
     }
     return this.dataModel.insertMany(incoming_data).then((docs) => {
-      return this.mapDocumentsArrayToDataArray(docs);
+      return docs.map((doc) => doc.toObject());
     });
   }
 
@@ -76,7 +76,7 @@ export class DevicesDataService {
         if (docs.length === 0) {
           throw new NotFoundException('No Latest Data Found');
         }
-        return this.mapDocumentsArrayToDataArray(docs)[0];
+        return docs[0].toObject();
       });
   }
 
@@ -98,39 +98,7 @@ export class DevicesDataService {
         if (docs.length === 0) {
           throw new NotFoundException('No Data Found From The Given Period');
         }
-        return this.mapDocumentsArrayToDataArray(docs);
+        return docs.map((doc) => doc.toObject());
       });
-  }
-
-  private mapDocumentstoData(
-    doc: MergeType<
-      Document<unknown, Data> &
-        Data & {
-          _id: Types.ObjectId;
-        } & {
-          __v?: number;
-        },
-      Omit<any, '_id'>
-    >,
-  ) {
-    return {
-      timestamp: doc.timestamp,
-      metadata: doc.metadata,
-      value: doc.value,
-    };
-  }
-
-  private mapDocumentsArrayToDataArray(
-    docs: MergeType<
-      Document<unknown, Data> &
-        Data & {
-          _id: Types.ObjectId;
-        } & {
-          __v?: number;
-        },
-      Omit<any, '_id'>
-    >[],
-  ) {
-    return docs.map((doc) => this.mapDocumentstoData(doc));
   }
 }

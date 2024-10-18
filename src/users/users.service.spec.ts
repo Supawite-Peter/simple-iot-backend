@@ -7,40 +7,50 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Model } from 'mongoose';
+import { getModelToken } from '@nestjs/mongoose';
+import { User } from './schemas/user.schema';
 
 describe('UsersService', () => {
   let service: UsersService;
-  const test_user = 'test',
-    test_pass = 'password',
-    test_id = 1,
+  let userModel: Model<User>;
+  const test_pass = 'password',
     test_correct_hash =
       '$2b$10$Inn9wpTrqat5FsaLrARlsetYMzsYVRrTi7QGRmL/iQKi5RXlbW7rS',
     test_wrong_hash = 'wrongpassword';
-  /**
-   * Mocks the UsersService register method to add a new user
-   * to the service's internal state.
-   * @function
-   */
-  const mockRegister = function (): void {
-    jest
-      .spyOn(service, 'register')
-      .mockImplementation((mock_user, mock_pass) => {
-        service['usersIdCounter'] = 1;
-        service['users'].push({
-          userId: 1,
-          username: mock_user,
-          hash: mock_pass,
-        });
-        return Promise.resolve();
-      });
-  };
+  let user_delete_one_stub = null;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
+      providers: [
+        UsersService,
+        {
+          provide: getModelToken('User', 'users'),
+          useValue: {
+            findOne: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue(null),
+            deleteOne: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(user_delete_one_stub),
+            })),
+          },
+        },
+        {
+          provide: getModelToken('UserCounter', 'users'),
+          useValue: {
+            findOneAndUpdate: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(null),
+            })),
+            findOne: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(null),
+            })),
+            create: jest.fn().mockResolvedValue(null),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
+    userModel = module.get(getModelToken('User', 'users'));
   });
 
   it('should be defined', () => {
@@ -48,18 +58,18 @@ describe('UsersService', () => {
   });
 
   describe('findUsername', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-      mockRegister();
-    });
-
     it('should return user by username', async () => {
-      await service.register(test_user, test_pass);
-      expect(await service.findUsername(test_user)).toEqual({
-        userId: test_id,
-        username: test_user,
-        hash: test_pass,
-      });
+      const stubbed_user = {
+        user_id: 1,
+        username: 'test_user',
+        hash: test_correct_hash,
+      };
+      jest
+        .spyOn(userModel, 'findOne')
+        .mockResolvedValueOnce(stubbed_user as any);
+      expect(await service.findUsername(stubbed_user.username)).toEqual(
+        stubbed_user,
+      );
     });
 
     it('should return undefined if user does not exist', async () => {
@@ -72,18 +82,16 @@ describe('UsersService', () => {
   });
 
   describe('findUserId', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-      mockRegister();
-    });
-
     it('should return user by userId', async () => {
-      await service.register(test_user, test_pass);
-      expect(await service.findUserId(test_id)).toEqual({
-        userId: test_id,
-        username: test_user,
-        hash: test_pass,
-      });
+      const stubbed_user = {
+        user_id: 1,
+        username: 'test_user',
+        hash: test_correct_hash,
+      };
+      jest
+        .spyOn(userModel, 'findOne')
+        .mockResolvedValueOnce(stubbed_user as any);
+      expect(await service.findUserId(1)).toEqual(stubbed_user);
     });
 
     it('should return undefined if user id does not exist', async () => {
@@ -103,22 +111,24 @@ describe('UsersService', () => {
     });
 
     it('should add a new user to the service', async () => {
-      await service.register(test_user, test_pass);
-      expect(service['usersIdCounter']).toBe(1);
-      expect(service['users']).toEqual([
-        {
-          userId: 1,
-          username: test_user,
-          hash: test_correct_hash,
-        },
-      ]);
+      expect(await service.register('test_user', test_pass)).toEqual({
+        user_id: 1,
+        username: 'test_user',
+      });
     });
 
     it('should throw conflict exception if username already exists', async () => {
-      await service.register(test_user, test_pass);
-      await expect(service.register(test_user, test_pass)).rejects.toThrow(
-        ConflictException,
-      );
+      const stubbed_user = {
+        user_id: 1,
+        username: 'test_user',
+        hash: test_correct_hash,
+      };
+      jest
+        .spyOn(userModel, 'findOne')
+        .mockResolvedValueOnce(stubbed_user as any);
+      await expect(
+        service.register(stubbed_user.username, test_pass),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('should throw internal exception if input username is undefined', async () => {
@@ -128,7 +138,7 @@ describe('UsersService', () => {
     });
 
     it('should throw internal exception if input password is undefined', async () => {
-      await expect(service.register(test_user, undefined)).rejects.toThrow(
+      await expect(service.register('test_user', undefined)).rejects.toThrow(
         InternalServerErrorException,
       );
     });
@@ -141,28 +151,41 @@ describe('UsersService', () => {
   });
 
   describe('unregister', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-      mockRegister();
-    });
-
     it('should remove a user from the service', async () => {
-      await service.register(test_user, test_correct_hash);
-      await service.unregister(test_user, test_pass);
-      expect(service['users']).toEqual([]);
+      const stubbed_user = {
+        user_id: 1,
+        username: 'test_user',
+        hash: test_correct_hash,
+      };
+      jest
+        .spyOn(userModel, 'findOne')
+        .mockResolvedValueOnce(stubbed_user as any);
+      user_delete_one_stub = {
+        deletedCount: 1,
+      };
+      expect(
+        await service.unregister(stubbed_user.username, test_pass),
+      ).toEqual(user_delete_one_stub);
     });
 
     it('should throw an not found exception if user does not exist', async () => {
-      await expect(service.unregister(test_user, test_pass)).rejects.toThrow(
+      await expect(service.unregister('test_user', test_pass)).rejects.toThrow(
         NotFoundException,
       );
     });
 
     it('should throw an unauthorized exception if password is incorrect', async () => {
-      await service.register(test_user, test_wrong_hash);
-      await expect(service.unregister(test_user, test_pass)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      const stubbed_user = {
+        user_id: 1,
+        username: 'test_user',
+        hash: test_wrong_hash,
+      };
+      jest
+        .spyOn(userModel, 'findOne')
+        .mockResolvedValueOnce(stubbed_user as any);
+      await expect(
+        service.unregister(stubbed_user.username, test_pass),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw internal exception if input username is undefined', async () => {
@@ -172,7 +195,7 @@ describe('UsersService', () => {
     });
 
     it('should throw internal exception if both input password is undefined', async () => {
-      await expect(service.unregister(test_user, undefined)).rejects.toThrow(
+      await expect(service.unregister('test_user', undefined)).rejects.toThrow(
         InternalServerErrorException,
       );
     });

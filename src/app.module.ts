@@ -1,19 +1,25 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DevicesModule } from './devices/devices.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    AuthModule,
-    UsersModule,
-    DevicesModule,
     ConfigModule.forRoot({
       envFilePath: ['.env.local', '.env.example'],
+      isGlobal: true,
     }),
-    MongooseModule.forRoot(process.env.DEVICES_MONGODB_URI),
+    UsersModule,
+    DevicesModule,
+    MongooseModule.forRoot(process.env.DEVICES_MONGODB_URI, {
+      connectionName: 'devices',
+    }),
+    MongooseModule.forRoot(process.env.USERS_MONGODB_URI, {
+      connectionName: 'users',
+    }),
+    AuthModule,
   ],
   controllers: [],
   providers: [],
