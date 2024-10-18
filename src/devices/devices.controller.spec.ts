@@ -160,7 +160,10 @@ describe('DevicesController', () => {
             },
           },
           {
-            values: [1, 2, 3],
+            payload: {
+              timestamp: new Date().toISOString(),
+              value: 1,
+            },
           },
           1,
           'topic1',

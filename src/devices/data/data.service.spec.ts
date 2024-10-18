@@ -53,9 +53,9 @@ describe('DeviceDataService', () => {
   });
 
   describe('updateData', () => {
-    it('should update single data if input values is a number', async () => {
+    it('should update single data if input payload is an object', async () => {
       const mockData = {
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         metadata: {
           device_id: 1,
           topic: 'test',
@@ -69,14 +69,17 @@ describe('DeviceDataService', () => {
         await service.updateData(
           mockData.metadata.device_id,
           mockData.metadata.topic,
-          mockData.value,
+          {
+            timestamp: mockData.timestamp,
+            value: mockData.value,
+          },
         ),
       ).toEqual(mockData);
     });
 
-    it('should update single data if input values is an array with a single number', async () => {
+    it('should update single data if input values is an array with a single object', async () => {
       const mockData = {
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         metadata: {
           device_id: 1,
           topic: 'test',
@@ -90,14 +93,19 @@ describe('DeviceDataService', () => {
         await service.updateData(
           mockData.metadata.device_id,
           mockData.metadata.topic,
-          [mockData.value],
+          [
+            {
+              timestamp: mockData.timestamp,
+              value: mockData.value,
+            },
+          ],
         ),
       ).toEqual(mockData);
     });
 
-    it('should update multiple data if input values is an array with multiple numbers', async () => {
+    it('should update multiple data if input values is an array with multiple objects', async () => {
       const mockData1 = {
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         metadata: {
           device_id: 1,
           topic: 'test',
@@ -105,7 +113,7 @@ describe('DeviceDataService', () => {
         value: 2,
       };
       const mockData2 = {
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         metadata: {
           device_id: 1,
           topic: 'test',
@@ -125,7 +133,16 @@ describe('DeviceDataService', () => {
         await service.updateData(
           mockData1.metadata.device_id,
           mockData1.metadata.topic,
-          [mockData1.value, mockData2.value],
+          [
+            {
+              timestamp: mockData1.timestamp,
+              value: mockData1.value,
+            },
+            {
+              timestamp: mockData2.timestamp,
+              value: mockData2.value,
+            },
+          ],
         ),
       ).toEqual([mockData1, mockData2]);
     });

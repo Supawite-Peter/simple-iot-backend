@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Data } from './schemas/data.schema';
 import { Model } from 'mongoose';
+import { DevicesPayloadDataDto } from '../dto/data.dto';
 
 @Injectable()
 export class DevicesDataService {
@@ -13,30 +14,32 @@ export class DevicesDataService {
   async updateData(
     device_id: number,
     topic: string,
-    values: number[] | number,
+    payload: DevicesPayloadDataDto | DevicesPayloadDataDto[],
   ): Promise<Data | Data[]> {
-    if (typeof values === 'number') {
-      return await this.updateSingleData(device_id, topic, values);
-    } else if (values.length === 1) {
-      return await this.updateSingleData(device_id, topic, values[0]);
+    if (Array.isArray(payload)) {
+      if (payload.length === 1) {
+        return await this.updateSingleData(device_id, topic, payload[0]);
+      } else {
+        return await this.updateMultipleData(device_id, topic, payload);
+      }
     } else {
-      return await this.updateMultipleData(device_id, topic, values);
+      return await this.updateSingleData(device_id, topic, payload);
     }
   }
 
   private async updateSingleData(
     device_id: number,
     topic: string,
-    value: number,
+    payload: DevicesPayloadDataDto,
   ) {
     return (
       await this.dataModel.create({
-        timestamp: new Date(),
+        timestamp: payload.timestamp || new Date(),
         metadata: {
           device_id: device_id,
           topic: topic,
         },
-        value: value,
+        value: payload.value,
       })
     ).toObject();
   }
@@ -44,21 +47,21 @@ export class DevicesDataService {
   private async updateMultipleData(
     device_id: number,
     topic: string,
-    values: number[],
+    payloads: DevicesPayloadDataDto[],
   ) {
-    const incoming_data = [];
+    const data_to_insert = [];
     const current_date = new Date();
-    for (const value of values) {
-      incoming_data.push({
-        timestamp: current_date,
+    for (const payload of payloads) {
+      data_to_insert.push({
+        timestamp: payload.timestamp || current_date,
         metadata: {
           device_id: device_id,
           topic: topic,
         },
-        value: value,
+        value: payload.value,
       });
     }
-    return this.dataModel.insertMany(incoming_data).then((docs) => {
+    return this.dataModel.insertMany(data_to_insert).then((docs) => {
       return docs.map((doc) => doc.toObject());
     });
   }

@@ -87,7 +87,7 @@ export class DevicesController {
         return this.devicesDataService.updateData(
           device_id,
           topic,
-          devicesDataDto.values,
+          devicesDataDto.payload,
         );
       });
   }
