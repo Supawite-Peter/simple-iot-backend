@@ -6,9 +6,13 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Device } from './schemas/device.schema';
 
 describe('DevicesService', () => {
   let service: DevicesService;
+  let devicesModel: Model<Device>;
 
   const device1_registered = {
     owner_name: 'exist1',
@@ -26,22 +30,42 @@ describe('DevicesService', () => {
     device_topics: ['topic3', 'topic4'],
   };
 
-  // Mocks register method
-  // device_id = 1,2 => exist in database
-  // else => not exist in database
-  const mockRegister = function (): void {
-    jest.spyOn(service, 'register').mockImplementation(() => {
-      service['device_counter'] = 2;
-      service['devices'].push({ ...device1_registered });
-      service['devices'].push({ ...device2_registered });
-      return Promise.resolve();
-    });
-  };
-
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DevicesService],
+      providers: [
+        DevicesService,
+        {
+          provide: getModelToken('Device', 'devices'),
+          useValue: {
+            find: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(null),
+            })),
+            create: jest.fn().mockResolvedValue(null),
+            deleteOne: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(null),
+            })),
+            updateOne: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(null),
+            })),
+            findOne: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(null),
+            })),
+          },
+        },
+        {
+          provide: getModelToken('DeviceCounter', 'devices'),
+          useValue: {
+            findOne: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(null),
+            })),
+            create: jest.fn().mockResolvedValue(null),
+            findOneAndUpdate: jest.fn().mockImplementation(() => ({
+              exec: jest.fn().mockResolvedValue(null),
+            })),
+          },
+        },
+      ],
     })
       .useMocker((token) => {
         if (token === UsersService) {
@@ -71,6 +95,7 @@ describe('DevicesService', () => {
       .compile();
 
     service = module.get<DevicesService>(DevicesService);
+    devicesModel = module.get(getModelToken('Device', 'devices'));
   });
 
   it('should be defined', () => {
@@ -85,23 +110,24 @@ describe('DevicesService', () => {
         device_name: 'device1',
         device_topics: ['topic1', 'topic2'],
       };
-      const expected_device_id = 1;
-      await service.register(
-        input.requester_name,
-        input.requester_id,
-        input.device_name,
-        input.device_topics,
-      );
-      expect(service['device_counter']).toBe(expected_device_id);
-      expect(service['devices']).toEqual([
-        {
-          owner_name: input.requester_name,
-          owner_id: input.requester_id,
-          device_id: expected_device_id,
-          device_name: input.device_name,
-          device_topics: input.device_topics,
-        },
-      ]);
+      const expected_output = {
+        owner_name: input.requester_name,
+        owner_id: input.requester_id,
+        device_id: 1,
+        device_name: input.device_name,
+        device_topics: input.device_topics,
+      };
+      jest.spyOn(devicesModel, 'create').mockResolvedValueOnce({
+        toObject: jest.fn().mockReturnValue(expected_output),
+      } as any);
+      expect(
+        await service.register(
+          input.requester_name,
+          input.requester_id,
+          input.device_name,
+          input.device_topics,
+        ),
+      ).toEqual(expected_output);
     });
 
     it('should able to register when no topics are provided', async () => {
@@ -111,23 +137,24 @@ describe('DevicesService', () => {
         device_name: 'device1',
         device_topics: [],
       };
-      const expected_device_id = 1;
-      await service.register(
-        input.requester_name,
-        input.requester_id,
-        input.device_name,
-        input.device_topics,
-      );
-      expect(service['device_counter']).toBe(expected_device_id);
-      expect(service['devices']).toEqual([
-        {
-          owner_name: input.requester_name,
-          owner_id: input.requester_id,
-          device_id: expected_device_id,
-          device_name: input.device_name,
-          device_topics: input.device_topics,
-        },
-      ]);
+      const expected_output = {
+        owner_name: input.requester_name,
+        owner_id: input.requester_id,
+        device_id: 1,
+        device_name: input.device_name,
+        device_topics: input.device_topics,
+      };
+      jest.spyOn(devicesModel, 'create').mockResolvedValueOnce({
+        toObject: jest.fn().mockReturnValue(expected_output),
+      } as any);
+      expect(
+        await service.register(
+          input.requester_name,
+          input.requester_id,
+          input.device_name,
+          input.device_topics,
+        ),
+      ).toEqual(expected_output);
     });
 
     it('should throw not found if requester does not exist', async () => {
@@ -166,20 +193,32 @@ describe('DevicesService', () => {
   });
 
   describe('unregister', () => {
-    beforeEach(() => {
-      mockRegister();
-    });
-
     it('should unregister a device', async () => {
       const input = {
         requester_id: 1,
         device_id: 1,
       };
-      await service.register('mock', 0, 'mock', undefined);
-      await service.unregister(input.requester_id, input.device_id);
+      const expected_output = {
+        deletedCount: 1,
+      };
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue({
+              owner_id: input.requester_id,
+              device_id: input.device_id,
+            }),
+          }) as any,
+      );
+      jest.spyOn(devicesModel, 'deleteOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(expected_output),
+          }) as any,
+      );
       expect(
-        service['devices'].find((device) => device.device_id === 1),
-      ).toBeUndefined();
+        await service.unregister(input.requester_id, input.device_id),
+      ).toEqual(expected_output);
     });
 
     it('should throw not found if requester does not exist', async () => {
@@ -187,7 +226,6 @@ describe('DevicesService', () => {
         requester_id: 3,
         device_id: 1,
       };
-      await service.register('mock', 0, 'mock', undefined);
       await expect(
         service.unregister(input.requester_id, input.device_id),
       ).rejects.toThrow(NotFoundException);
@@ -198,7 +236,6 @@ describe('DevicesService', () => {
         requester_id: 1,
         device_id: 3,
       };
-      await service.register('mock', 0, 'mock', undefined);
       await expect(
         service.unregister(input.requester_id, input.device_id),
       ).rejects.toThrow(NotFoundException);
@@ -209,7 +246,15 @@ describe('DevicesService', () => {
         requester_id: 1,
         device_id: 2,
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue({
+              owner_id: 2,
+              device_id: input.device_id,
+            }),
+          }) as any,
+      );
       await expect(
         service.unregister(input.requester_id, input.device_id),
       ).rejects.toThrow(UnauthorizedException);
@@ -217,31 +262,38 @@ describe('DevicesService', () => {
   });
 
   describe('getDevicesList', () => {
-    beforeEach(() => {
-      mockRegister();
-    });
-
     it('should return a list of devices registered by a requester', async () => {
       const input = {
         requester_id: 1,
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'find').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue([
+              {
+                toObject: jest.fn().mockReturnValue(device1_registered),
+              },
+            ]),
+          }) as any,
+      );
       expect(await service.getDevicesList(input.requester_id)).toEqual([
-        {
-          owner_name: device1_registered.owner_name,
-          owner_id: device1_registered.owner_id,
-          device_id: device1_registered.device_id,
-          device_name: device1_registered.device_name,
-          device_topics: device1_registered.device_topics,
-        },
+        device1_registered,
       ]);
     });
 
-    it('should return empty list if requester has no devices registered', async () => {
+    it('should return throw not found if requester has no devices registered', async () => {
       const input = {
         requester_id: 2,
       };
-      expect(await service.getDevicesList(input.requester_id)).toEqual([]);
+      jest.spyOn(devicesModel, 'find').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue([]),
+          }) as any,
+      );
+      await expect(service.getDevicesList(input.requester_id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw not found if requester does not exist', async () => {
@@ -255,17 +307,18 @@ describe('DevicesService', () => {
   });
 
   describe('addDeviceTopics', () => {
-    beforeEach(() => {
-      mockRegister();
-    });
-
     it('should add topics to a device (input topics is a string)', async () => {
       const input = {
         requester_id: 1,
         device_id: 1,
         topics: 'topic3',
       };
-      await service.register('', 0, '', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(device1_registered),
+          }) as any,
+      );
       const result = await service.addDeviceTopics(
         input.requester_id,
         input.device_id,
@@ -275,11 +328,6 @@ describe('DevicesService', () => {
         topics_added: 1,
         topics: ['topic3'],
       });
-      expect(
-        service['devices'].find(
-          (device) => device.device_id === input.device_id,
-        ).device_topics,
-      ).toEqual(['topic1', 'topic2', 'topic3']);
     });
 
     it('should add topics to a device (input topics is an array)', async () => {
@@ -288,7 +336,12 @@ describe('DevicesService', () => {
         device_id: 2,
         topics: ['topic4', 'topic5'],
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(device2_registered),
+          }) as any,
+      );
       const result = await service.addDeviceTopics(
         input.requester_id,
         input.device_id,
@@ -298,11 +351,6 @@ describe('DevicesService', () => {
         topics_added: 1,
         topics: ['topic5'],
       });
-      expect(
-        service['devices'].find(
-          (device) => device.device_id === input.device_id,
-        ).device_topics,
-      ).toEqual(['topic3', 'topic4', 'topic5']);
     });
 
     it('should throw bad request if all topics are already registered', async () => {
@@ -311,7 +359,12 @@ describe('DevicesService', () => {
         device_id: 1,
         topics: ['topic1'],
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(device1_registered),
+          }) as any,
+      );
       await expect(
         service.addDeviceTopics(
           input.requester_id,
@@ -319,10 +372,6 @@ describe('DevicesService', () => {
           input.topics,
         ),
       ).rejects.toThrow(BadRequestException);
-      expect(
-        service['devices'].find((device) => device.device_id === 1)
-          .device_topics,
-      ).toEqual(['topic1', 'topic2']);
     });
 
     it('should throw not found if requester does not exist', async () => {
@@ -331,7 +380,6 @@ describe('DevicesService', () => {
         device_id: 1,
         topics: ['topic1'],
       };
-      await service.register('mock', 0, 'mock', undefined);
       await expect(
         service.addDeviceTopics(
           input.requester_id,
@@ -347,7 +395,6 @@ describe('DevicesService', () => {
         device_id: 5,
         topics: ['topic1'],
       };
-      await service.register('mock', 0, 'mock', undefined);
       await expect(
         service.addDeviceTopics(
           input.requester_id,
@@ -363,7 +410,12 @@ describe('DevicesService', () => {
         device_id: 2,
         topics: ['topic5'],
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(device2_registered),
+          }) as any,
+      );
       await expect(
         service.addDeviceTopics(
           input.requester_id,
@@ -375,17 +427,18 @@ describe('DevicesService', () => {
   });
 
   describe('removeDeviceTopics', () => {
-    beforeEach(() => {
-      mockRegister();
-    });
-
     it('should remove topics from a device (input topics is a string)', async () => {
       const input = {
         requester_id: 1,
         device_id: 1,
         topics: 'topic1',
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(device1_registered),
+          }) as any,
+      );
       const result = await service.removeDeviceTopics(
         input.requester_id,
         input.device_id,
@@ -395,11 +448,6 @@ describe('DevicesService', () => {
         topics_removed: 1,
         topics: ['topic1'],
       });
-      expect(
-        service['devices'].find(
-          (device) => device.device_id === input.device_id,
-        ).device_topics,
-      ).toEqual(['topic2']);
     });
 
     it('should remove topics from a device (input topics is an array)', async () => {
@@ -408,7 +456,12 @@ describe('DevicesService', () => {
         device_id: 2,
         topics: ['topic2', 'topic3'],
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(device2_registered),
+          }) as any,
+      );
       const result = await service.removeDeviceTopics(
         input.requester_id,
         input.device_id,
@@ -418,11 +471,6 @@ describe('DevicesService', () => {
         topics_removed: 1,
         topics: ['topic3'],
       });
-      expect(
-        service['devices'].find(
-          (device) => device.device_id === input.device_id,
-        ).device_topics,
-      ).toEqual(['topic4']);
     });
 
     it('should throw bad request if no topics to be removed', async () => {
@@ -431,7 +479,12 @@ describe('DevicesService', () => {
         device_id: 1,
         topics: ['topic8', 'topic9'],
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(device1_registered),
+          }) as any,
+      );
       await expect(
         service.removeDeviceTopics(
           input.requester_id,
@@ -439,11 +492,6 @@ describe('DevicesService', () => {
           input.topics,
         ),
       ).rejects.toThrow(BadRequestException);
-      expect(
-        service['devices'].find(
-          (device) => device.device_id === input.device_id,
-        ).device_topics,
-      ).toEqual(['topic1', 'topic2']);
     });
 
     it('should throw not found if requester does not exist', async () => {
@@ -452,7 +500,6 @@ describe('DevicesService', () => {
         device_id: 1,
         topics: 'topic1',
       };
-      await service.register('mock', 0, 'mock', undefined);
       await expect(
         service.removeDeviceTopics(
           input.requester_id,
@@ -468,7 +515,6 @@ describe('DevicesService', () => {
         device_id: 3,
         topics: 'topic3',
       };
-      await service.register('mock', 0, 'mock', undefined);
       await expect(
         service.removeDeviceTopics(
           input.requester_id,
@@ -484,7 +530,12 @@ describe('DevicesService', () => {
         device_id: 2,
         topics: 'topic3',
       };
-      await service.register('mock', 0, 'mock', undefined);
+      jest.spyOn(devicesModel, 'findOne').mockImplementationOnce(
+        () =>
+          ({
+            exec: jest.fn().mockResolvedValue(device2_registered),
+          }) as any,
+      );
       await expect(
         service.removeDeviceTopics(
           input.requester_id,
