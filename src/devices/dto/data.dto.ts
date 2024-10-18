@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-export const devicesDataSchema = z.object({
-  values: z.union([z.number(), z.array(z.number()).nonempty()]),
+const payloadDataSchema = z.object({
+  timestamp: z.string().datetime().optional(),
+  value: z.number(),
 });
+export const devicesDataSchema = z.object({
+  payload: z.union([payloadDataSchema, z.array(payloadDataSchema).nonempty()]),
+});
+
 export type DevicesDataDto = z.infer<typeof devicesDataSchema>;
+export type DevicesPayloadDataDto = z.infer<typeof payloadDataSchema>;
