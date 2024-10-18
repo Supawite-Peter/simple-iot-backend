@@ -26,6 +26,8 @@ Furthermore, users can query the latest data or data from a preferred time perio
 - :black_square_button: Swagger UI Page
 - :black_square_button: e2e Test
 - :black_square_button: MQTT Support
+- :black_square_button: User Role
+- :black_square_button: Aggregate Sensor Data
 - :black_square_button: Simple Web Front-end
 - ...
 
