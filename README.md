@@ -75,7 +75,7 @@ $ npm run test
 #### Add or Remove User Account
 
 <details>
- <summary><code>POST</code> <code><b>/users/register</b></code> <code>(Register new user account)</code></summary>
+ <summary><code>POST</code> <code><b>/users</b></code> <code>(Register new user account)</code></summary>
 
 ##### Authentication
 
@@ -104,7 +104,7 @@ $ npm run test
 ##### Example cURL
 
 > ```javascript
-> curl --location 'http://localhost:3000/users/register' \
+> curl --location 'http://localhost:3000/users' \
 > --header 'Content-Type: application/json' \
 > --data '{
 >    "username": "hello",
@@ -115,7 +115,7 @@ $ npm run test
 </details>
 
 <details>
- <summary><code>DELETE</code> <code><b>/users/unregister</b></code> <code>(Delete user account)</code></summary>
+ <summary><code>DELETE</code> <code><b>/users</b></code> <code>(Delete user account)</code></summary>
 
 ##### Authentication
 
@@ -148,7 +148,7 @@ $ npm run test
 ##### Example cURL
 
 > ```javascript
-> curl --location --request DELETE 'http://localhost:3000/users/unregister' \
+> curl --location --request DELETE 'http://localhost:3000/users' \
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
@@ -213,7 +213,7 @@ $ npm run test
 #### Add or Remove Device
 
 <details>
- <summary><code>POST</code> <code><b>/devices/register</b></code> <code>(Register new device to user)</code></summary>
+ <summary><code>POST</code> <code><b>/devices</b></code> <code>(Register new device to user)</code></summary>
 
 ##### Authentication
 
@@ -245,7 +245,7 @@ $ npm run test
 ##### Example cURL
 
 > ```javascript
-> curl --location 'http://localhost:3000/devices/register' \
+> curl --location 'http://localhost:3000/devices' \
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
@@ -257,7 +257,7 @@ $ npm run test
 </details>
 
 <details>
- <summary><code>DELETE</code> <code><b>/devices/unregister</b></code> <code>(Delete registered device)</code></summary>
+ <summary><code>DELETE</code> <code><b>/devices</b></code> <code>(Delete registered device)</code></summary>
 
 ##### Authentication
 
@@ -291,7 +291,7 @@ $ npm run test
 ##### Example cURL
 
 > ```javascript
-> curl --location --request DELETE 'http://localhost:3000/devices/unregister' \
+> curl --location --request DELETE 'http://localhost:3000/devices' \
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
@@ -306,7 +306,7 @@ $ npm run test
 #### Add or Remove Topics
 
 <details>
- <summary><code>POST</code> <code><b>/devices/topics</b></code> <code>(Add new topics to a device)</code></summary>
+ <summary><code>POST</code> <code><b>/devices/{device_id}/topics</b></code> <code>(Add new topics to a device)</code></summary>
 
 ##### Authentication
 
@@ -323,7 +323,6 @@ $ npm run test
 > | name | type | data type | description |
 > |------|------|-----------|-------------|
 > | topics   | required | string[] or string   | topics to be added |
-> | device_id | required | string or number | target device id  |
 
 
 ##### Responses
@@ -341,7 +340,7 @@ $ npm run test
 ##### Example cURL
 
 > ```javascript
-> curl --location 'http://localhost:3000/devices/topics' \
+> curl --location 'http://localhost:3000/devices/1/topics' \
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
@@ -353,7 +352,7 @@ $ npm run test
 </details>
 
 <details>
- <summary><code>DELETE</code> <code><b>/devices/topics</b></code> <code>(Remove registered topic from a device)</code></summary>
+ <summary><code>DELETE</code> <code><b>/devices/{device_id}/topics</b></code> <code>(Remove registered topic from a device)</code></summary>
 
 ##### Authentication
 
@@ -371,7 +370,6 @@ $ npm run test
 > | name      |  type     | data type               | description                                                           |
 > |-----------|-----------|-------------------------|-----------------------------------------------------------------------|
 > | topics  | required | string or string[] | topics to be removed |
-> | device_id | required | string or number | target device id |
 
 
 ##### Responses
@@ -389,7 +387,7 @@ $ npm run test
 ##### Example cURL
 
 > ```javascript
-> curl --location --request DELETE 'http://localhost:3000/devices/topics' \
+> curl --location --request DELETE 'http://localhost:3000/devices/1/topics' \
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
@@ -405,7 +403,7 @@ $ npm run test
 #### List User Owned Devices
 
 <details>
- <summary><code>GET</code> <code><b>/devices/list</b></code> <code>(List every devices registered by current user)</code></summary>
+ <summary><code>GET</code> <code><b>/devices/{device_id}</b></code> <code>(List every devices registered by current user)</code></summary>
 
 ##### Authentication
 
@@ -434,7 +432,7 @@ $ npm run test
 ##### Example cURL
 
 > ```javascript
-> curl --location 'http://localhost:3000/devices/list' \
+> curl --location 'http://localhost:3000/devices/1' \
 > --header 'Authorization: Bearer {{JWT_TOKEN}}'
 > ```
 

@@ -15,30 +15,23 @@
 						"method": "POST",
 						"header": [],
 						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "username",
-									"value": "hello",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "world",
-									"type": "text"
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"hello\",\r\n    \"password\": \"world\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
 								}
-							]
+							}
 						},
 						"url": {
-							"raw": "http://localhost:3000/users/register",
+							"raw": "http://localhost:3000/users",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
-								"users",
-								"register"
+								"users"
 							],
 							"query": [
 								{
@@ -83,15 +76,14 @@
 							]
 						},
 						"url": {
-							"raw": "http://localhost:3000/users/unregister",
+							"raw": "http://localhost:3000/users",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
-								"users",
-								"unregister"
+								"users"
 							],
 							"query": [
 								{
@@ -184,6 +176,19 @@
 					"item": [
 						{
 							"name": "Register New Device",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var responseBody = pm.response.json();\r",
+											"pm.collectionVariables.set(\"device_id\", responseBody.device_id);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
 							"request": {
 								"method": "POST",
 								"header": [
@@ -203,15 +208,14 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/register",
+									"raw": "http://localhost:3000/devices",
 									"protocol": "http",
 									"host": [
 										"localhost"
 									],
 									"port": "3000",
 									"path": [
-										"devices",
-										"register"
+										"devices"
 									],
 									"query": [
 										{
@@ -242,7 +246,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"device_id\": \"1\"\r\n}",
+									"raw": "{\r\n    \"device_id\": {{device_id}}\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -250,15 +254,14 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/unregister",
+									"raw": "http://localhost:3000/devices",
 									"protocol": "http",
 									"host": [
 										"localhost"
 									],
 									"port": "3000",
 									"path": [
-										"devices",
-										"unregister"
+										"devices"
 									],
 									"query": [
 										{
@@ -294,7 +297,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"topics\": \"air\",\r\n    \"device_id\": 1\r\n}",
+									"raw": "{\r\n    \"topics\": \"air\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -302,7 +305,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/topics",
+									"raw": "http://localhost:3000/devices/{{device_id}}/topics",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -310,6 +313,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
+										"{{device_id}}",
 										"topics"
 									],
 									"query": [
@@ -341,7 +345,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"topics\": [\"air\",\"speed\"],\r\n    \"device_id\": 1\r\n}",
+									"raw": "{\r\n    \"topics\": [\"air\",\"speed\"]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -349,7 +353,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/topics",
+									"raw": "http://localhost:3000/devices/{{device_id}}/topics",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -357,6 +361,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
+										"{{device_id}}",
 										"topics"
 									],
 									"query": [
@@ -388,7 +393,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"topics\": \"air\",\r\n    \"device_id\": 1\r\n}",
+									"raw": "{\r\n    \"topics\": \"air\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -396,7 +401,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/topics",
+									"raw": "http://localhost:3000/devices/{{device_id}}/topics",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -404,6 +409,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
+										"{{device_id}}",
 										"topics"
 									],
 									"query": [
@@ -435,7 +441,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"topics\": [\"air\",\"speed\"],\r\n    \"device_id\": 1\r\n}",
+									"raw": "{\r\n    \"topics\": [\"air\",\"speed\"]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -443,7 +449,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/topics",
+									"raw": "http://localhost:3000/devices/{{device_id}}/topics",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -451,6 +457,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
+										"{{device_id}}",
 										"topics"
 									],
 									"query": [
@@ -507,7 +514,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/1/temp",
+									"raw": "http://localhost:3000/devices/{{device_id}}/temp",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -515,7 +522,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
-										"1",
+										"{{device_id}}",
 										"temp"
 									],
 									"query": [
@@ -567,7 +574,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/1/temp",
+									"raw": "http://localhost:3000/devices/{{device_id}}/temp",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -575,7 +582,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
-										"1",
+										"{{device_id}}",
 										"temp"
 									],
 									"query": [
@@ -639,7 +646,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/1/temp",
+									"raw": "http://localhost:3000/devices/{{device_id}}/temp",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -647,7 +654,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
-										"1",
+										"{{device_id}}",
 										"temp"
 									],
 									"query": [
@@ -690,7 +697,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/1/temp/latest",
+									"raw": "http://localhost:3000/devices/{{device_id}}/temp/latest",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -698,7 +705,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
-										"1",
+										"{{device_id}}",
 										"temp",
 										"latest"
 									],
@@ -760,7 +767,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/1/temp/periodic",
+									"raw": "http://localhost:3000/devices/{{device_id}}/temp/periodic",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -768,7 +775,7 @@
 									"port": "3000",
 									"path": [
 										"devices",
-										"1",
+										"{{device_id}}",
 										"temp",
 										"periodic"
 									],
@@ -812,15 +819,14 @@
 									"raw": ""
 								},
 								"url": {
-									"raw": "http://localhost:3000/devices/list",
+									"raw": "http://localhost:3000/devices",
 									"protocol": "http",
 									"host": [
 										"localhost"
 									],
 									"port": "3000",
 									"path": [
-										"devices",
-										"list"
+										"devices"
 									],
 									"query": [
 										{
@@ -890,6 +896,10 @@
 		},
 		{
 			"key": "timestamp3",
+			"value": ""
+		},
+		{
+			"key": "device_id",
 			"value": ""
 		}
 	]
