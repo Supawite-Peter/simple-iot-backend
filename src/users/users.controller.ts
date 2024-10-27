@@ -9,7 +9,7 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Public()
-  @Post('register')
+  @Post('')
   register(
     @Body(new ZodValidationPipe(registerSchema)) registerDto: RegisterDto,
   ) {
@@ -19,7 +19,7 @@ export class UsersController {
     );
   }
 
-  @Delete('unregister')
+  @Delete('')
   unregister(
     @Body(new ZodValidationPipe(registerSchema)) registerDto: RegisterDto,
   ) {

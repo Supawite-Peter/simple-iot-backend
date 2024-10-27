@@ -27,7 +27,7 @@ export class DevicesController {
     private devicesDataService: DevicesDataService,
   ) {}
 
-  @Post('register')
+  @Post('')
   @UsePipes(new ZodValidationPipe(registerSchema))
   register(@Request() reg, @Body() registerDto: RegisterDto) {
     return this.devicesService.register(
@@ -38,7 +38,7 @@ export class DevicesController {
     );
   }
 
-  @Delete('unregister')
+  @Delete('')
   unregister(
     @Request() req,
     @Body('device_id', ParseIntPipe) device_id: number,
@@ -46,25 +46,25 @@ export class DevicesController {
     return this.devicesService.unregister(req.user.sub, device_id);
   }
 
-  @Get('list')
+  @Get('')
   list(@Request() req) {
     return this.devicesService.getDevicesList(req.user.sub);
   }
 
-  @Post('topics')
+  @Post(':device_id/topics')
   addTopic(
     @Request() req,
     @Body('topics', ParseArrayPipe) topics: string[],
-    @Body('device_id', ParseIntPipe) device_id: number,
+    @Param('device_id', ParseIntPipe) device_id: number,
   ) {
     return this.devicesService.addDeviceTopics(req.user.sub, device_id, topics);
   }
 
-  @Delete('topics')
+  @Delete(':device_id/topics')
   removeTopic(
     @Request() req,
     @Body('topics', ParseArrayPipe) topics: string[],
-    @Body('device_id', ParseIntPipe) device_id: number,
+    @Param('device_id', ParseIntPipe) device_id: number,
   ) {
     return this.devicesService.removeDeviceTopics(
       req.user.sub,
