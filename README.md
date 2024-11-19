@@ -23,6 +23,10 @@ Furthermore, users can query the latest data or data from a preferred time perio
 - :white_check_mark: MonogoDB implementation on Users/Devices Module
 - :white_check_mark: Support Timestamp Devices Data
 - :white_check_mark: API Docs
+- :black_square_button: Migrate User to SQL DB
+- :black_square_button: JWT Refresh/Access Token
+- :black_square_button: JWT Cookie
+- :black_square_button: API Key for Devices Data
 - :black_square_button: Swagger UI Page
 - :black_square_button: e2e Test
 - :black_square_button: MQTT Support
