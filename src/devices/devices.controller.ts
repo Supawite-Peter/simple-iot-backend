@@ -31,7 +31,6 @@ export class DevicesController {
   @UsePipes(new ZodValidationPipe(registerSchema))
   register(@Request() reg, @Body() registerDto: RegisterDto) {
     return this.devicesService.register(
-      reg.user.username,
       reg.user.sub,
       registerDto.device_name,
       registerDto.device_topics,
