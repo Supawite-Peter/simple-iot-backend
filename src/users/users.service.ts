@@ -5,19 +5,78 @@ import {
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from './schemas/user.schema';
-import { UserCounter } from './schemas/user-counter.schema';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { User } from './entity/user.entity';
+import { UserDetail } from './interfaces/users.interface';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(User.name, 'users') private usersModel: Model<User>,
-    @InjectModel(UserCounter.name, 'users')
-    private usersCounterModel: Model<UserCounter>,
+    @InjectRepository(User) private usersRepository: Repository<User>,
   ) {}
+
+  /**
+   * Registers a user.
+   * @param username The username
+   * @param password The password
+   * @returns User detail of the registered user
+   * @throws InternalServerErrorException if username or password is undefined
+   * @throws ConflictException if the username already exists
+   */
+  async register(username: string, password: string): Promise<UserDetail> {
+    // Check if username and password are defined
+    if (username === undefined || password === undefined) {
+      throw new InternalServerErrorException('Undefined username or password');
+    }
+
+    // Check if username already exists
+    if (await this.findUsername(username)) {
+      throw new ConflictException('Username already exists');
+    }
+
+    // Register user
+    const user = this.usersRepository.create({
+      username: username,
+      passwordHash: await bcrypt.hash(password, 10),
+    });
+    await this.usersRepository.save(user);
+
+    return this.getUserDetails(user);
+  }
+
+  /**
+   * Unregisters a user.
+   * @param user_id The user id of the user
+   * @param password The password
+   * @returns User detail of the unregistered user
+   * @throws InternalServerErrorException if username or password is undefined
+   * @throws NotFoundException if the user does not exist
+   * @throws UnauthorizedException if the password is incorrect
+   */
+  async unregister(user_id: number, password: string): Promise<UserDetail> {
+    // Check if username and password are defined
+    if (user_id === undefined || password === undefined) {
+      throw new InternalServerErrorException('Undefined username or password');
+    }
+
+    // Check if user exists
+    const user = await this.findUserId(user_id);
+    if (!user) {
+      throw new NotFoundException('User does not exist');
+    }
+
+    // Check password
+    if (!(await this.checkHash(password, user.passwordHash))) {
+      throw new UnauthorizedException('Incorrect password');
+    }
+
+    // Delete user
+    await this.usersRepository.remove(user);
+
+    return this.getUserDetails(user, user_id);
+  }
 
   /**
    * Find a user by username.
@@ -25,12 +84,9 @@ export class UsersService {
    * @returns The user if found, undefined otherwise
    */
   async findUsername(target_name: string): Promise<User | undefined> {
-    return this.usersModel.findOne({ username: target_name }).then((user) => {
-      if (user) {
-        return user;
-      }
-      return undefined;
-    });
+    return this.usersRepository
+      .findOneByOrFail({ username: target_name })
+      .catch(() => undefined);
   }
 
   /**
@@ -39,68 +95,9 @@ export class UsersService {
    * @returns The user if found, undefined otherwise
    */
   async findUserId(target_id: number): Promise<User | undefined> {
-    return this.usersModel.findOne({ user_id: target_id }).then((user) => {
-      if (user) {
-        return user;
-      }
-      return undefined;
-    });
-  }
-
-  /**
-   * Registers a user.
-   * @param username The username
-   * @param password The password
-   * @returns The user id and username
-   * @throws InternalServerErrorException if username or password is undefined
-   * @throws ConflictException if the username already exists
-   */
-  async register(username: string, password: string): Promise<any> {
-    if (username === undefined || password === undefined) {
-      throw new InternalServerErrorException('Undefined username or password');
-    }
-    // Check if username already exists
-    if (await this.findUsername(username)) {
-      throw new ConflictException('Username already exists');
-    }
-    // Register user
-    const current_counter = await this.getAndIncreaseCounter();
-    await this.usersModel.create({
-      user_id: current_counter,
-      username: username,
-      hash: await bcrypt.hash(password, 10),
-    });
-    return {
-      user_id: current_counter,
-      username: username,
-    };
-  }
-
-  /**
-   * Unregisters a user.
-   * @param username The username
-   * @param password The password
-   * @returns Nothing
-   * @throws InternalServerErrorException if username or password is undefined
-   * @throws NotFoundException if the user does not exist
-   * @throws UnauthorizedException if the password is incorrect
-   */
-  async unregister(username: string, password: string): Promise<any> {
-    // Check if username and password are defined
-    if (username === undefined || password === undefined) {
-      throw new InternalServerErrorException('Undefined username or password');
-    }
-    // Check if user exists
-    const user = await this.findUsername(username);
-    if (!user) {
-      throw new NotFoundException('User does not exist');
-    }
-    // Check password
-    if (!(await this.checkHash(password, user.hash))) {
-      throw new UnauthorizedException('Incorrect password');
-    }
-    // Delete user
-    return this.usersModel.deleteOne({ user_id: user.user_id }).exec();
+    return this.usersRepository
+      .findOneByOrFail({ id: target_id })
+      .catch(() => undefined);
   }
 
   /**
@@ -113,23 +110,12 @@ export class UsersService {
     return await bcrypt.compare(password, hash);
   }
 
-  private async getAndIncreaseCounter(): Promise<number> {
-    const counter_doc = await this.getCounter();
-    if (counter_doc === null) {
-      await this.initCounter(1);
-      return 1;
-    }
-    await this.usersCounterModel
-      .findOneAndUpdate({}, { counter: counter_doc.counter + 1 })
-      .exec();
-    return counter_doc.counter + 1;
-  }
-
-  private async getCounter(): Promise<UserCounter> {
-    return this.usersCounterModel.findOne().exec();
-  }
-
-  private async initCounter(val: number): Promise<UserCounter> {
-    return this.usersCounterModel.create({ counter: val });
+  private getUserDetails(user: User, id?: number): UserDetail {
+    return {
+      id: user.id ? user.id : id,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      username: user.username,
+    };
   }
 }

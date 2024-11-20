@@ -39,10 +39,17 @@ describe('UsersController', () => {
   describe('unregister', () => {
     it('should pass username and password to UsersService.unregister', async () => {
       expect(
-        await controller.unregister({
-          username: 'user',
-          password: 'pass',
-        }),
+        await controller.unregister(
+          {
+            user: {
+              username: 'user1',
+              sub: 1,
+            },
+          },
+          {
+            password: 'pass',
+          },
+        ),
       ).toEqual('Unregister Received');
     });
   });

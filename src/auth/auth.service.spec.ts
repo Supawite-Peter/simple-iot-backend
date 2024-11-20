@@ -21,9 +21,9 @@ describe('AuthService', () => {
             findUsername: jest.fn().mockImplementation((username) => {
               if (username === 'exist') {
                 return {
-                  userId: 1,
+                  id: 1,
                   username: 'exist',
-                  hash: 'hashpassword',
+                  passwordHash: 'hashpassword',
                 };
               }
               return undefined;
