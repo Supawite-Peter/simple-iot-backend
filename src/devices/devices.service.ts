@@ -2,231 +2,238 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Device } from './entity/device.entity';
+import { Topic } from './entity/topic.entity';
+import { User } from '../users/entity/user.entity';
 import { UsersService } from '../users/users.service';
-import { InjectModel } from '@nestjs/mongoose';
-import { Device } from './schemas/device.schema';
-import { DeviceCounter } from './schemas/device-counter.schema';
-import { Model } from 'mongoose';
+import {
+  DeviceDetail,
+  TopicAdd,
+  TopicRemove,
+} from './interfaces/device.interface';
 
 @Injectable()
 export class DevicesService {
   constructor(
     private usersService: UsersService,
-    @InjectModel(Device.name, 'devices') private devicesModel: Model<Device>,
-    @InjectModel(DeviceCounter.name, 'devices')
-    private devicesCounterModel: Model<DeviceCounter>,
+    @InjectRepository(Device) private devicesRepository: Repository<Device>,
+    @InjectRepository(Topic) private topicsRepository: Repository<Topic>,
   ) {}
 
   async register(
-    requester_name: string,
-    requester_id: number,
-    device_name: string,
-    device_topics: string[],
-  ): Promise<any> {
+    requesterId: number,
+    deviceName: string,
+    deviceTopics: string[],
+  ): Promise<DeviceDetail> {
     // Check if user exists
-    await this.checkUserExist(requester_id);
+    const user = await this.getUser(requesterId);
 
-    // Check Input
-    if (device_name === undefined) {
+    // Check device name
+    if (deviceName === undefined)
       throw new BadRequestException('Device name is missing');
-    }
-    if (device_topics === undefined) {
-      device_topics = [];
-    }
+
+    // Create topics
+    const topics = await this.createTopics(deviceTopics);
 
     // Register device
-    const current_counter = await this.getAndIncreaseDeviceCounter();
-    return (
-      await this.devicesModel.create({
-        owner_name: requester_name,
-        owner_id: requester_id,
-        device_id: current_counter,
-        device_name: device_name,
-        device_topics: device_topics,
-      })
-    ).toObject();
+    const device = this.devicesRepository.create({
+      name: deviceName,
+      user: user,
+      topics: topics,
+    });
+    await this.devicesRepository.save(device);
+
+    return this.getDeviceDetails(device);
   }
 
-  async unregister(requester_id: number, device_id: number): Promise<any> {
-    await this.getAndCheckDeviceOwner(device_id, requester_id);
+  async unregister(
+    requesterId: number,
+    deviceId: number,
+  ): Promise<DeviceDetail> {
+    // Check if device exists
+    const device = await this.getAndCheckDeviceOwner(deviceId, requesterId);
+
     // Unregister device
-    return this.devicesModel.deleteOne({ device_id: device_id }).exec();
+    await this.devicesRepository.remove(device);
+
+    return this.getDeviceDetails(device, deviceId);
   }
 
-  async getDevicesList(requester_id: number): Promise<Device[]> {
-    // Check if user exists
-    await this.checkUserExist(requester_id);
-    return this.findDeviceOwner(requester_id);
+  async getDevicesList(requesterId: number): Promise<DeviceDetail[]> {
+    // Get & Check if user exists
+    const user = await this.getUser(requesterId);
+    // Get devices
+    const devices = await this.findDeviceOwner(user.id);
+    // Check if devices exist
+    if (devices.length === 0) throw new NotFoundException('No devices found');
+
+    return this.getDevicesDetails(devices);
   }
 
   async addDeviceTopics(
-    requester_id: number,
-    device_id: number,
-    topics: string[] | string,
-  ): Promise<any> {
+    requesterId: number,
+    deviceId: number,
+    deviceTopics: string[] | string,
+  ): Promise<TopicAdd> {
     // Get device
-    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(deviceId, requesterId);
 
     // if topics is a string, convert it to an array
-    if (typeof topics === 'string') {
-      topics = [topics];
+    if (typeof deviceTopics === 'string') {
+      deviceTopics = [deviceTopics];
     }
 
-    // Get unique topics that are not already registered
-    const unique_topics: Set<string> = new Set();
-    for (const topic of topics) {
-      if (!device.device_topics.includes(topic)) {
-        unique_topics.add(topic);
+    // Get topics to register
+    const registeredTopics = this.getTopicsDetails(device);
+    const toRegisterTopics: Set<string> = new Set();
+    for (const topic of deviceTopics) {
+      if (!registeredTopics.includes(topic)) {
+        toRegisterTopics.add(topic);
       }
     }
-    const topics_added = Array.from(unique_topics);
+    const addedTopics = Array.from(toRegisterTopics);
+
     // Check if there are topics to register
-    if (topics_added.length === 0) {
+    if (addedTopics.length === 0) {
       throw new BadRequestException('Topics are already registered');
     }
-    // Register topics
-    await this.devicesModel
-      .updateOne(
-        { device_id: device_id },
-        { $push: { device_topics: { $each: topics_added } } },
-        { upsert: false },
-      )
-      .exec();
+    await this.createTopics(addedTopics, device);
+
     return {
-      topics_added: topics_added.length,
-      topics: topics_added,
+      topicsAdded: addedTopics.length,
+      topics: addedTopics,
     };
   }
 
   async removeDeviceTopics(
-    requester_id: number,
-    device_id: number,
-    topics: string[] | string,
-  ): Promise<any> {
+    requesterId: number,
+    deviceId: number,
+    deviceTopics: string[] | string,
+  ): Promise<TopicRemove> {
     // Get device
-    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(deviceId, requesterId);
+
     // if topics is a string, convert it to an array
-    if (typeof topics === 'string') {
-      topics = [topics];
+    if (typeof deviceTopics === 'string') {
+      deviceTopics = [deviceTopics];
     }
+
     // Get topics that will be removed
-    const topics_removed = new Set();
-    for (const topic of topics) {
-      if (device.device_topics.includes(topic)) {
-        topics_removed.add(topic);
-      }
+    const toRemovedTopics = [];
+    for (const topic of device.topics) {
+      if (deviceTopics.includes(topic.name)) toRemovedTopics.push(topic);
     }
+
     // Check if there are topics to remove
-    if (topics_removed.size === 0) {
+    if (toRemovedTopics.length === 0) {
       throw new BadRequestException('Topics are not registered');
     }
+
     // Remove topics
-    device.device_topics = device.device_topics.filter(
-      (topic) => !topics_removed.has(topic),
-    );
-    await this.devicesModel
-      .updateOne(
-        { device_id: device_id },
-        { $set: { device_topics: device.device_topics } },
-        { upsert: false },
-      )
-      .exec();
+    await this.topicsRepository.remove(toRemovedTopics);
 
     return {
-      topics_removed: topics_removed.size,
-      topics: Array.from(topics_removed),
+      topicsRemoved: toRemovedTopics.length,
+      topics: toRemovedTopics.map((topic) => topic.name),
     };
   }
 
   async checkDeviceTopic(
-    requester_id: number,
-    device_id: number,
-    topic: string,
+    requesterId: number,
+    deviceId: number,
+    deviceTopic: string,
   ): Promise<boolean> {
-    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
-    if (!device.device_topics.includes(topic)) {
+    // Get device
+    const device = await this.getAndCheckDeviceOwner(deviceId, requesterId);
+
+    // Check if topic is registered
+    if (!device.topics.map((t) => t.name).includes(deviceTopic)) {
       throw new BadRequestException('Topic is not registered');
     }
+
     return true;
   }
 
-  private async getDeviceCounter(): Promise<DeviceCounter> {
-    return this.devicesCounterModel.findOne().exec();
+  private async findDeviceOwner(ownerId: number): Promise<Device[]> {
+    return this.devicesRepository
+      .createQueryBuilder('device')
+      .leftJoinAndSelect('device.user', 'user')
+      .leftJoinAndSelect('device.topics', 'topic')
+      .where('user.id = :user_id', { user_id: ownerId })
+      .getMany();
   }
 
-  private async initDeviceCounter(val: number): Promise<DeviceCounter> {
-    return this.devicesCounterModel.create({ counter: val });
-  }
+  private async getUser(requesterId: number): Promise<User> {
+    // Get & Check if user exists
+    const user = await this.usersService.findUserId(requesterId);
+    if (!user) throw new NotFoundException('User not found');
 
-  private async getAndIncreaseDeviceCounter(): Promise<number> {
-    const counter_doc = await this.getDeviceCounter();
-    if (counter_doc === null) {
-      await this.initDeviceCounter(1);
-      return 1;
-    }
-    await this.devicesCounterModel
-      .findOneAndUpdate({}, { counter: counter_doc.counter + 1 })
-      .exec();
-    return counter_doc.counter + 1;
-  }
-
-  private async findDeviceId(device_id: number): Promise<Device> {
-    return this.devicesModel
-      .findOne({
-        device_id: device_id,
-      })
-      .exec()
-      .then((doc) => {
-        if (!doc) {
-          throw new NotFoundException(
-            `Device with id ${device_id} was not found`,
-          );
-        }
-        return doc;
-      });
-  }
-
-  private async findDeviceOwner(owner_id: number): Promise<Device[]> {
-    return this.devicesModel
-      .find({ owner_id: owner_id })
-      .exec()
-      .then((docs) => {
-        if (docs.length === 0) {
-          throw new NotFoundException(
-            `No devices found for user with id ${owner_id}`,
-          );
-        }
-        return docs.map((doc) => doc.toObject());
-      });
-  }
-
-  private async checkUserExist(requester_id: number): Promise<boolean> {
-    const user = await this.usersService.findUserId(requester_id);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return true;
+    return user;
   }
 
   private async getAndCheckDeviceOwner(
-    device_id: number,
-    requester_id: number,
+    deviceId: number,
+    ownerId: number,
   ): Promise<Device> {
-    // Check if user exists
-    await this.checkUserExist(requester_id);
-    // Check if device id exists
-    const device = await this.findDeviceId(device_id);
-    if (!device) {
-      throw new NotFoundException('Device not found');
-    }
-    // Check ownership
-    if (device.owner_id !== requester_id) {
-      throw new UnauthorizedException(
-        'Requester is not the owner of the device',
+    // Get & Check if device exists
+    const device = await this.devicesRepository
+      .createQueryBuilder('device')
+      .leftJoinAndSelect('device.user', 'user')
+      .leftJoinAndSelect('device.topics', 'topic')
+      .where('device.id = :id', { id: deviceId })
+      .andWhere('user.id = :user_id', { user_id: ownerId })
+      .getOne();
+    if (!device)
+      throw new NotFoundException(
+        `Device with id ${deviceId} was not found for user with id ${ownerId}`,
       );
-    }
+
     return device;
+  }
+
+  private async createTopics(
+    topicsName: string[],
+    device?: Device,
+  ): Promise<Topic[]> {
+    // Initialize topics array
+    const createdTopics = [] as Topic[];
+
+    // Check if topicsName is empty
+    if (topicsName.length === 0 || topicsName === undefined)
+      return createdTopics;
+
+    // Create topics
+    for (const topic of topicsName)
+      createdTopics.push(
+        device != null
+          ? this.topicsRepository.create({ name: topic, device: device })
+          : this.topicsRepository.create({ name: topic }),
+      );
+
+    // Save topics if device is registered to the topics
+    if (device != null) await this.topicsRepository.save(createdTopics);
+
+    return createdTopics;
+  }
+
+  private getDeviceDetails(device: Device, id?: number): DeviceDetail {
+    return {
+      id: device.id ? device.id : id,
+      name: device.name,
+      userId: device.user.id,
+      serial: device.serial,
+      topics: this.getTopicsDetails(device),
+    };
+  }
+
+  private getDevicesDetails(devices: Device[]): DeviceDetail[] {
+    return devices.map((device) => this.getDeviceDetails(device));
+  }
+
+  private getTopicsDetails(device: Device): string[] {
+    return device.topics ? device.topics.map((topic) => topic.name) : [];
   }
 }

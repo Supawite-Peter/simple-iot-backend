@@ -1,7 +1,8 @@
-import { Post, Delete, Body, Controller } from '@nestjs/common';
+import { Post, Delete, Body, Request, Controller } from '@nestjs/common';
+import { Public } from '../auth/auth.public';
 import { UsersService } from './users.service';
 import { RegisterDto, registerSchema } from './dto/register.dto';
-import { Public } from '../auth/auth.public';
+import { UnregisterDto, unregisterSchema } from './dto/unregister.dto';
 import { ZodValidationPipe } from '../zod.validation.pipe';
 
 @Controller('users')
@@ -21,11 +22,9 @@ export class UsersController {
 
   @Delete('')
   unregister(
-    @Body(new ZodValidationPipe(registerSchema)) registerDto: RegisterDto,
+    @Request() req,
+    @Body(new ZodValidationPipe(unregisterSchema)) unregisterDto: UnregisterDto,
   ) {
-    return this.usersService.unregister(
-      registerDto.username,
-      registerDto.password,
-    );
+    return this.usersService.unregister(req.user.sub, unregisterDto.password);
   }
 }

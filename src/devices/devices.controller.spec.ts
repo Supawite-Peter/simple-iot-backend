@@ -73,8 +73,8 @@ describe('DevicesController', () => {
             },
           },
           {
-            device_name: 'device1',
-            device_topics: ['topic1'],
+            name: 'device1',
+            topics: ['topic1'],
           },
         ),
       ).toEqual('Register Received');
@@ -149,7 +149,7 @@ describe('DevicesController', () => {
     });
   });
 
-  describe('POST /:device_id/:topic', () => {
+  describe('POST /:deviceId/:topic', () => {
     it('should pass requster id, target device id and topic to DevicesService.updateData', async () => {
       expect(
         await controller.updateValue(
@@ -174,7 +174,7 @@ describe('DevicesController', () => {
     });
   });
 
-  describe('GET /:device_id/:topic/latest', () => {
+  describe('GET /:deviceId/:topic/latest', () => {
     it('should pass requster id, target device id and topic to DevicesService.getLatestData', async () => {
       expect(
         await controller.getLatestData(
@@ -193,7 +193,7 @@ describe('DevicesController', () => {
     });
   });
 
-  describe('GET /:device_id/:topic/periodic', () => {
+  describe('GET /:deviceId/:topic/periodic', () => {
     it('should pass requster id, target device id and topic to DevicesService.getPeriodicData', async () => {
       expect(
         await controller.getPeriodicData(

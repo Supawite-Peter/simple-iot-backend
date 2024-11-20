@@ -1,5 +1,6 @@
-export interface User {
-  userId: number;
+export interface UserDetail {
+  id: number;
+  firstName: string;
+  lastName: string;
   username: string;
-  hash: string;
 }

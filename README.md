@@ -23,7 +23,7 @@ Furthermore, users can query the latest data or data from a preferred time perio
 - :white_check_mark: MonogoDB implementation on Users/Devices Module
 - :white_check_mark: Support Timestamp Devices Data
 - :white_check_mark: API Docs
-- :black_square_button: Migrate User to SQL DB
+- :white_check_mark: Migrate User/Device/Topic to SQL DB
 - :black_square_button: JWT Refresh/Access Token
 - :black_square_button: JWT Cookie
 - :black_square_button: API Key for Devices Data
@@ -38,7 +38,8 @@ Furthermore, users can query the latest data or data from a preferred time perio
 ## Requirements
 
 1. Node.js (version >= 16)
-2. MongoDB (Tested on 8.0)
+2. MongoDB (Tested on 8.0) For timeseries DB
+3. MySQL (Tested on 8.0.40)
 
 ## Project setup
 
@@ -101,7 +102,7 @@ $ npm run test
 
 > | http code | content-type | response |
 > |-----------|--------------|----------|
-> | `201` | `application/json` | `{"user_id": 1, "username": hello}` |
+> | `201` | `application/json` | `{"id": 1 ,"username": hello}` |
 > | `400` | `application/json` | `{"message": "Validation failed","statusCode": 400}` |
 > | `409` | `application/json` | `{"message": "Username already exists","error": "Conflict","statusCode": 409}` |
 
@@ -136,7 +137,6 @@ $ npm run test
 
 > | name      |  type     | data type               | description                                                           |
 > |-----------|-----------|-------------------------|-----------------------------------------------------------------------|
-> | username   | required | string | string of username  |
 > | password   | required | string | string of password
 
 
@@ -144,7 +144,7 @@ $ npm run test
 
 > | http code     | content-type                      | response                                                            |
 > |---------------|-----------------------------------|---------------------------------------------------------------------|
-> | `200`         | `application/json`        | `{"acknowledge": true, "deletedCount": 1}`|
+> | `200`         | `application/json`        | `{"id": 1, "username": "hello"}`|
 > | `400`         | `application/json`                | `{"message": "Validation failed","statusCode": 400}`|
 > | `401`         | `application/json`         | `{"message": "Unauthorized","statusCode": 401}`|
 > | `404`         | `application/json`         | `{"message": "User does not exist","statusCode": 404}`|
@@ -156,7 +156,6 @@ $ npm run test
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
->    "username": "hello",
 >    "password": "world"
 > }'
 > ```
@@ -192,7 +191,7 @@ $ npm run test
 
 > | http code | content-type | response |
 > |-----------|--------------|----------|
-> | `200`     | `application/json` | `{"access_token": {{JWT_TOKEN}}}`|
+> | `200`     | `application/json` | `{"accessToken": {{JWT_TOKEN}}}`|
 > | `400`     | `application/json` | `{"message": "Validation failed","statusCode": 400}`|
 > | `401`     | `application/json` | `{"message": "Incorrect password","statusCode": 401}`|
 > | `404`     | `application/json` | `{"message": "User doesn't exist","statusCode": 404}`|
@@ -233,15 +232,15 @@ $ npm run test
 
 > | name | type | data type | description |
 > |------|------|-----------|-------------|
-> | device_name   | required | string   | Name of the device  |
-> | device_topics | optional | string[] or string | Topics to be registered   |
+> | name   | required | string   | Name of the device  |
+> | topics | optional | string[] or string | Topics to be registered   |
 
 
 ##### Responses
 
 > | http code | content-type | response |
 > |-----------|--------------|----------|
-> | `201` | `application/json` | `{"owner_id": 1, "owner_name": hello, "device_id": 1, "device_name": "device1", "device_topics": ["temp", "rh"]}` |
+> | `201` | `application/json` | `{"id": 1, "name": "device1", "userId": 1, "topics": ["temp", "rh"]}` |
 > | `400` | `application/json` | `{"message": "Validation failed","statusCode": 400}` |
 > | `400` | `application/json` | `{"message": "Device name is missing","statusCode": 400}` |
 > | `404` | `application/json` | `{"message": "User not found","statusCode": 404}` |
@@ -253,8 +252,8 @@ $ npm run test
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
->    "device_name": "device1",
->    "device_topics": ["temp","rh"]
+>    "name": "device1",
+>    "topics": ["temp","rh"]
 >}'
 > ```
 
@@ -278,18 +277,17 @@ $ npm run test
 
 > | name      |  type     | data type               | description                                                           |
 > |-----------|-----------|-------------------------|-----------------------------------------------------------------------|
-> | device_id  | required | string or number | device id to be delete |
+> | id  | required | string or number | device id to be delete |
 
 
 ##### Responses
 
 > | http code     | content-type                      | response                                                            |
 > |---------------|-----------------------------------|---------------------------------------------------------------------|
-> | `200`         | `application/json`        | `{"acknowledge": true, "deletedCount": 1}`|
-> | `400`         | `application/json`                | `{"message": "Validation failed","statusCode": 400}`|
+> | `200`         | `application/json`        | `{"id": 1, "name": "device2", "userId": 1, "topics": ["temp", "rh"]}`|
+> | `400`         | `application/json`         | `{"message": "Validation failed","statusCode": 400}`|
 > | `401`         | `application/json`         | `{"message": "Unauthorized","statusCode": 401}`|
-> | `401`         | `application/json`         | `{"message": "Requester is not the owner of the device","statusCode": 401}`|
-> | `404`         | `application/json`         | `{"message": "Device with id {{device_id}} was not found","statusCode": 404}`|
+> | `404`         | `application/json`         | `{"message": "Device with id {{deviceId}} was not found for user with id {{userId}}","statusCode": 404}`|
 > | `404`         | `application/json`         | `{"message": "User not found","statusCode": 404}`|
 
 ##### Example cURL
@@ -299,7 +297,7 @@ $ npm run test
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
->    "device_id": "1"
+>    "id": "1"
 > }'
 > ```
 
@@ -310,7 +308,7 @@ $ npm run test
 #### Add or Remove Topics
 
 <details>
- <summary><code>POST</code> <code><b>/devices/{device_id}/topics</b></code> <code>(Add new topics to a device)</code></summary>
+ <summary><code>POST</code> <code><b>/devices/{deviceId}/topics</b></code> <code>(Add new topics to a device)</code></summary>
 
 ##### Authentication
 
@@ -320,7 +318,9 @@ $ npm run test
 
 ##### Parameters
 
-> None
+> | name | type | data type | description |
+> |------|------|-----------|-------------|
+> | `deviceId` | required | number | target device id to add topics |
 
 ##### Body
 
@@ -333,12 +333,11 @@ $ npm run test
 
 > | http code | content-type | response |
 > |-----------|--------------|----------|
-> | `201` | `application/json` | `{"topics_added": 1, "topics": ["air"]}` |
+> | `201` | `application/json` | `{"topicsAdded": 1, "topics": ["air"]}` |
 > | `400`         | `application/json`                | `{"message": "Validation failed","statusCode": 400}`|
 > | `400`         | `application/json`         | `{"message": "Topics are already registered","statusCode": 400}`|
 > | `401`         | `application/json`         | `{"message": "Unauthorized","statusCode": 401}`|
-> | `401`         | `application/json`         | `{"message": "Requester is not the owner of the device","statusCode": 401}`|
-> | `404`         | `application/json`         | `{"message": "Device with id {{device_id}} was not found","statusCode": 404}`|
+> | `404`         | `application/json`         | `{"message": "Device with id {{deviceId}} was not found for user with id {{userId}}","statusCode": 404}`|
 > | `404`         | `application/json`         | `{"message": "User not found","statusCode": 404}`|
 
 ##### Example cURL
@@ -348,15 +347,14 @@ $ npm run test
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
->    "topics": "air",
->    "device_id": 1
+>    "topics": "air"
 >}'
 > ```
 
 </details>
 
 <details>
- <summary><code>DELETE</code> <code><b>/devices/{device_id}/topics</b></code> <code>(Remove registered topic from a device)</code></summary>
+ <summary><code>DELETE</code> <code><b>/devices/{deviceId}/topics</b></code> <code>(Remove registered topic from a device)</code></summary>
 
 ##### Authentication
 
@@ -367,7 +365,9 @@ $ npm run test
 
 ##### Parameters
 
-> None
+> | name | type | data type | description |
+> |------|------|-----------|-------------|
+> | `deviceId` | required | number | target device id to delete topics |
 
 ##### Body
 
@@ -380,12 +380,11 @@ $ npm run test
 
 > | http code | content-type | response |
 > |-----------|--------------|----------|
-> | `201` | `application/json` | `{"topics_added": 1, "topics": ["air"]}` |
+> | `201` | `application/json` | `{"topicsRemoved": 1, "topics": ["air"]}` |
 > | `400`         | `application/json`                | `{"message": "Validation failed","statusCode": 400}`|
 > | `400`         | `application/json`         | `{"message": "Topics are not registered","statusCode": 400}`|
 > | `401`         | `application/json`         | `{"message": "Unauthorized","statusCode": 401}`|
-> | `401`         | `application/json`         | `{"message": "Requester is not the owner of the device","statusCode": 401}`|
-> | `404`         | `application/json`         | `{"message": "Device with id {{device_id}} was not found","statusCode": 404}`|
+> | `404`         | `application/json`         | `{"message": "Device with id {{deviceId}} was not found for user with id {{userId}}","statusCode": 404}`|
 > | `404`         | `application/json`         | `{"message": "User not found","statusCode": 404}`|
 
 ##### Example cURL
@@ -395,8 +394,7 @@ $ npm run test
 > --header 'Authorization: Bearer {{JWT_TOKEN}}' \
 > --header 'Content-Type: application/json' \
 > --data '{
->    "topics": "air",
->    "device_id": 1
+>    "topics": "air"
 > }'
 > ```
 
@@ -407,7 +405,7 @@ $ npm run test
 #### List User Owned Devices
 
 <details>
- <summary><code>GET</code> <code><b>/devices/{device_id}</b></code> <code>(List every devices registered by current user)</code></summary>
+ <summary><code>GET</code> <code><b>/devices</b></code> <code>(List every devices registered by current user)</code></summary>
 
 ##### Authentication
 
@@ -429,14 +427,14 @@ $ npm run test
 
 > | http code | content-type | response |
 > |-----------|--------------|----------|
-> | `200` | `application/json` | `[{"owner_id": 1, "owner_name": "hello", "device_id": 2, "device_name": "device1", "device_topics": ["temp", "rh"]}]` |
+> | `200` | `application/json` | `[{"id": 1, "name": "device1", "userId": 1,  "topics": ["temp", "rh"]}]` |
 > | `401`         | `application/json`         | `{"message": "Unauthorized","statusCode": 401}`|
-> | `404`         | `application/json`         | `{"message": "No devices found for user with id {{user_id}}","statusCode": 404}`|
+> | `404`         | `application/json`         | `{"message": "No devices found","statusCode": 404}`|
 
 ##### Example cURL
 
 > ```javascript
-> curl --location 'http://localhost:3000/devices/1' \
+> curl --location 'http://localhost:3000/devices' \
 > --header 'Authorization: Bearer {{JWT_TOKEN}}'
 > ```
 
@@ -448,7 +446,7 @@ $ npm run test
 #### Sending Sensor Data to a Topic
 
 <details>
- <summary><code>POST</code> <code><b>/devices/{device_id}/{topic}</b></code> <code>(Sending Sensor Data to a Topic)</code></summary>
+ <summary><code>POST</code> <code><b>/devices/{deviceId}/{topic}</b></code> <code>(Sending Sensor Data to a Topic)</code></summary>
 
 ##### Authentication
 
@@ -460,7 +458,7 @@ $ npm run test
 
 > | name | type | data type | description |
 > |------|------|-----------|-------------|
-> | `device_id` | required | number | target device id to storing data |
+> | `deviceId` | required | number | target device id to storing data |
 > | `topic` | required | string | target topic to storing data |
 
 ##### Body
@@ -530,7 +528,7 @@ $ npm run test
 #### Query Sensor Data
 
 <details>
- <summary><code>GET</code> <code><b>/devices/{device_id}/{topic}/latest</b></code> <code>(Query latest data from a topic)</code></summary>
+ <summary><code>GET</code> <code><b>/devices/{deviceId}/{topic}/latest</b></code> <code>(Query latest data from a topic)</code></summary>
 
 ##### Authentication
 
@@ -542,7 +540,7 @@ $ npm run test
 
 > | name | type | data type | description |
 > |------|------|-----------|-------------|
-> | `device_id` | required | number | target device id to storing data |
+> | `deviceId` | required | number | target device id to storing data |
 > | `topic` | required | string | target topic to storing data |
 
 ##### Body
@@ -584,7 +582,7 @@ $ npm run test
 </details>
 
 <details>
- <summary><code>GET</code> <code><b>/devices/{device_id}/{topic}/periodic</b></code> <code>(Query sensor data in between time)</code></summary>
+ <summary><code>GET</code> <code><b>/devices/{deviceId}/{topic}/periodic</b></code> <code>(Query sensor data in between time)</code></summary>
 
 ##### Authentication
 
@@ -596,7 +594,7 @@ $ npm run test
 
 > | name | type | data type | description |
 > |------|------|-----------|-------------|
-> | `device_id` | required | number | target device id to storing data |
+> | `deviceId` | required | number | target device id to storing data |
 > | `topic` | required | string | target topic to storing data |
 
 ##### Body

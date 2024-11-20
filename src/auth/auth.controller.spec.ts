@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  const result = { access_token: 'jwttoken' };
+  const result = { accessToken: 'jwttoken' };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

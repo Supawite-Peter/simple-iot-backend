@@ -33,13 +33,13 @@ export class AuthService {
       throw new NotFoundException("User doesn't exist");
     }
     // Check user hash
-    if (!(await this.usersService.checkHash(pass, user.hash))) {
+    if (!(await this.usersService.checkHash(pass, user.passwordHash))) {
       throw new UnauthorizedException('Incorrect password');
     }
     // Generate JWT
-    const payload = { sub: user.user_id, username: user.username };
+    const payload = { sub: user.id, username: user.username };
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      accessToken: await this.jwtService.signAsync(payload),
     };
   }
 }

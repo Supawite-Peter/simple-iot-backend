@@ -21,9 +21,9 @@ describe('AuthService', () => {
             findUsername: jest.fn().mockImplementation((username) => {
               if (username === 'exist') {
                 return {
-                  userId: 1,
+                  id: 1,
                   username: 'exist',
-                  hash: 'hashpassword',
+                  passwordHash: 'hashpassword',
                 };
               }
               return undefined;
@@ -55,7 +55,7 @@ describe('AuthService', () => {
   describe('signIn', () => {
     it('should return access token if user exists', async () => {
       const result = await service.signIn('exist', 'password');
-      expect(result.access_token).toBe('jwttoken');
+      expect(result.accessToken).toBe('jwttoken');
     });
 
     it('should throw not found exception if user does not exist', async () => {
