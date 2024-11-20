@@ -30,9 +30,6 @@ const ENV = process.env.NODE_ENV;
     MongooseModule.forRoot(process.env.DEVICES_MONGODB_URI, {
       connectionName: 'devices',
     }),
-    MongooseModule.forRoot(process.env.USERS_MONGODB_URI, {
-      connectionName: 'users',
-    }),
     AuthModule,
   ],
   controllers: [],
