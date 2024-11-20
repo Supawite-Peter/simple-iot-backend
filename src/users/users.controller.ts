@@ -1,8 +1,8 @@
 import { Post, Delete, Body, Request, Controller } from '@nestjs/common';
+import { Public } from '../auth/auth.public';
 import { UsersService } from './users.service';
 import { RegisterDto, registerSchema } from './dto/register.dto';
 import { UnregisterDto, unregisterSchema } from './dto/unregister.dto';
-import { Public } from '../auth/auth.public';
 import { ZodValidationPipe } from '../zod.validation.pipe';
 
 @Controller('users')

@@ -23,7 +23,7 @@ export class Data {
   @Prop(
     raw({
       topic: { type: String },
-      device_id: { type: Number },
+      deviceId: { type: Number },
     }),
   )
   metadata: Record<string, any>;

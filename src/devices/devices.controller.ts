@@ -32,17 +32,14 @@ export class DevicesController {
   register(@Request() reg, @Body() registerDto: RegisterDto) {
     return this.devicesService.register(
       reg.user.sub,
-      registerDto.device_name,
-      registerDto.device_topics,
+      registerDto.name,
+      registerDto.topics,
     );
   }
 
   @Delete('')
-  unregister(
-    @Request() req,
-    @Body('device_id', ParseIntPipe) device_id: number,
-  ) {
-    return this.devicesService.unregister(req.user.sub, device_id);
+  unregister(@Request() req, @Body('id', ParseIntPipe) deviceId: number) {
+    return this.devicesService.unregister(req.user.sub, deviceId);
   }
 
   @Get('')
@@ -50,74 +47,74 @@ export class DevicesController {
     return this.devicesService.getDevicesList(req.user.sub);
   }
 
-  @Post(':device_id/topics')
+  @Post(':deviceId/topics')
   addTopic(
     @Request() req,
     @Body('topics', ParseArrayPipe) topics: string[],
-    @Param('device_id', ParseIntPipe) device_id: number,
+    @Param('deviceId', ParseIntPipe) deviceId: number,
   ) {
-    return this.devicesService.addDeviceTopics(req.user.sub, device_id, topics);
+    return this.devicesService.addDeviceTopics(req.user.sub, deviceId, topics);
   }
 
-  @Delete(':device_id/topics')
+  @Delete(':deviceId/topics')
   removeTopic(
     @Request() req,
     @Body('topics', ParseArrayPipe) topics: string[],
-    @Param('device_id', ParseIntPipe) device_id: number,
+    @Param('deviceId', ParseIntPipe) deviceId: number,
   ) {
     return this.devicesService.removeDeviceTopics(
       req.user.sub,
-      device_id,
+      deviceId,
       topics,
     );
   }
 
-  @Post(':device_id/:topic')
+  @Post(':deviceId/:topic')
   updateValue(
     @Request() req,
     @Body(new ZodValidationPipe(devicesDataSchema))
     devicesDataDto: DevicesDataDto,
-    @Param('device_id', ParseIntPipe) device_id: number,
+    @Param('deviceId', ParseIntPipe) deviceId: number,
     @Param('topic') topic: string,
   ) {
     return this.devicesService
-      .checkDeviceTopic(req.user.sub, device_id, topic)
+      .checkDeviceTopic(req.user.sub, deviceId, topic)
       .then(() => {
         return this.devicesDataService.updateData(
-          device_id,
+          deviceId,
           topic,
           devicesDataDto.payload,
         );
       });
   }
 
-  @Get(':device_id/:topic/latest')
+  @Get(':deviceId/:topic/latest')
   getLatestData(
     @Request() req,
-    @Param('device_id', ParseIntPipe) device_id: number,
+    @Param('deviceId', ParseIntPipe) deviceId: number,
     @Param('topic') topic: string,
   ) {
     return this.devicesService
-      .checkDeviceTopic(req.user.sub, device_id, topic)
+      .checkDeviceTopic(req.user.sub, deviceId, topic)
       .then(() => {
-        return this.devicesDataService.getLatestData(device_id, topic);
+        return this.devicesDataService.getLatestData(deviceId, topic);
       });
   }
 
-  @Get(':device_id/:topic/periodic')
+  @Get(':deviceId/:topic/periodic')
   getPeriodicData(
     @Request() req,
     @Body(new ZodValidationPipe(devicesDataPeriodicSchema))
     devicesDataPeriodicDto: DevicesDataPeriodicDto,
-    @Param('device_id', ParseIntPipe)
-    device_id: number,
+    @Param('deviceId', ParseIntPipe)
+    deviceId: number,
     @Param('topic') topic: string,
   ) {
     return this.devicesService
-      .checkDeviceTopic(req.user.sub, device_id, topic)
+      .checkDeviceTopic(req.user.sub, deviceId, topic)
       .then(() => {
         return this.devicesDataService.getPeriodicData(
-          device_id,
+          deviceId,
           topic,
           devicesDataPeriodicDto.from,
           devicesDataPeriodicDto.to,

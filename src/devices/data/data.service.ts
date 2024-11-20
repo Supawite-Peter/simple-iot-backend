@@ -12,23 +12,23 @@ export class DevicesDataService {
   ) {}
 
   async updateData(
-    device_id: number,
+    deviceId: number,
     topic: string,
     payload: DevicesPayloadDataDto | DevicesPayloadDataDto[],
   ): Promise<Data | Data[]> {
     if (Array.isArray(payload)) {
       if (payload.length === 1) {
-        return await this.updateSingleData(device_id, topic, payload[0]);
+        return await this.updateSingleData(deviceId, topic, payload[0]);
       } else {
-        return await this.updateMultipleData(device_id, topic, payload);
+        return await this.updateMultipleData(deviceId, topic, payload);
       }
     } else {
-      return await this.updateSingleData(device_id, topic, payload);
+      return await this.updateSingleData(deviceId, topic, payload);
     }
   }
 
   private async updateSingleData(
-    device_id: number,
+    deviceId: number,
     topic: string,
     payload: DevicesPayloadDataDto,
   ) {
@@ -36,7 +36,7 @@ export class DevicesDataService {
       await this.dataModel.create({
         timestamp: payload.timestamp || new Date(),
         metadata: {
-          device_id: device_id,
+          deviceId: deviceId,
           topic: topic,
         },
         value: payload.value,
@@ -45,31 +45,31 @@ export class DevicesDataService {
   }
 
   private async updateMultipleData(
-    device_id: number,
+    deviceId: number,
     topic: string,
     payloads: DevicesPayloadDataDto[],
   ) {
-    const data_to_insert = [];
-    const current_date = new Date();
+    const dataToInsert = [];
+    const currentDate = new Date();
     for (const payload of payloads) {
-      data_to_insert.push({
-        timestamp: payload.timestamp || current_date,
+      dataToInsert.push({
+        timestamp: payload.timestamp || currentDate,
         metadata: {
-          device_id: device_id,
+          deviceId: deviceId,
           topic: topic,
         },
         value: payload.value,
       });
     }
-    return this.dataModel.insertMany(data_to_insert).then((docs) => {
+    return this.dataModel.insertMany(dataToInsert).then((docs) => {
       return docs.map((doc) => doc.toObject());
     });
   }
 
-  async getLatestData(device_id: number, topic: string): Promise<Data> {
+  async getLatestData(deviceId: number, topic: string): Promise<Data> {
     return this.dataModel
       .find({
-        'metadata.device_id': device_id,
+        'metadata.deviceId': deviceId,
         'metadata.topic': topic,
       })
       .sort({ timestamp: -1 })
@@ -84,7 +84,7 @@ export class DevicesDataService {
   }
 
   async getPeriodicData(
-    device_id: number,
+    deviceId: number,
     topic: string,
     from: string,
     to: string,
@@ -92,7 +92,7 @@ export class DevicesDataService {
     return this.dataModel
       .find({
         timestamp: { $gte: from, $lte: to },
-        'metadata.device_id': device_id,
+        'metadata.deviceId': deviceId,
         'metadata.topic': topic,
       })
       .sort({ timestamp: -1 })

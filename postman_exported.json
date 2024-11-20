@@ -64,11 +64,6 @@
 							"mode": "urlencoded",
 							"urlencoded": [
 								{
-									"key": "username",
-									"value": "hello",
-									"type": "text"
-								},
-								{
 									"key": "password",
 									"value": "world",
 									"type": "text"
@@ -114,7 +109,7 @@
 							"script": {
 								"exec": [
 									"var responseBody = pm.response.json();\r",
-									"pm.collectionVariables.set(\"JWT token\", responseBody.access_token);"
+									"pm.collectionVariables.set(\"JWT token\", responseBody.accessToken);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -182,7 +177,7 @@
 									"script": {
 										"exec": [
 											"var responseBody = pm.response.json();\r",
-											"pm.collectionVariables.set(\"device_id\", responseBody.device_id);"
+											"pm.collectionVariables.set(\"device_id\", responseBody.id);"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -200,7 +195,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"device_name\": \"device1\",\r\n    \"device_topics\": [\"temp\",\"rh\"]\r\n}",
+									"raw": "{\r\n    \"name\": \"device1\",\r\n    \"topics\": [\"temp\",\"rh\"]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -246,7 +241,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"device_id\": {{device_id}}\r\n}",
+									"raw": "{\r\n    \"id\": {{device_id}}\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -393,7 +388,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"topics\": \"air\"\r\n}",
+									"raw": "{\r\n    \"topics\": \"rh\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -441,7 +436,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"topics\": [\"air\",\"speed\"]\r\n}",
+									"raw": "{\r\n    \"topics\": [\"air\",\"speed\",\"temp\"]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -900,6 +895,10 @@
 		},
 		{
 			"key": "device_id",
+			"value": ""
+		},
+		{
+			"key": "id",
 			"value": ""
 		}
 	]

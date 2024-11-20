@@ -57,7 +57,7 @@ describe('DeviceDataService', () => {
       const mockData = {
         timestamp: new Date().toISOString(),
         metadata: {
-          device_id: 1,
+          deviceId: 1,
           topic: 'test',
         },
         value: 1,
@@ -67,7 +67,7 @@ describe('DeviceDataService', () => {
       } as any);
       expect(
         await service.updateData(
-          mockData.metadata.device_id,
+          mockData.metadata.deviceId,
           mockData.metadata.topic,
           {
             timestamp: mockData.timestamp,
@@ -81,7 +81,7 @@ describe('DeviceDataService', () => {
       const mockData = {
         timestamp: new Date().toISOString(),
         metadata: {
-          device_id: 1,
+          deviceId: 1,
           topic: 'test',
         },
         value: 2,
@@ -91,7 +91,7 @@ describe('DeviceDataService', () => {
       } as any);
       expect(
         await service.updateData(
-          mockData.metadata.device_id,
+          mockData.metadata.deviceId,
           mockData.metadata.topic,
           [
             {
@@ -107,7 +107,7 @@ describe('DeviceDataService', () => {
       const mockData1 = {
         timestamp: new Date().toISOString(),
         metadata: {
-          device_id: 1,
+          deviceId: 1,
           topic: 'test',
         },
         value: 2,
@@ -115,7 +115,7 @@ describe('DeviceDataService', () => {
       const mockData2 = {
         timestamp: new Date().toISOString(),
         metadata: {
-          device_id: 1,
+          deviceId: 1,
           topic: 'test',
         },
         value: 3,
@@ -131,7 +131,7 @@ describe('DeviceDataService', () => {
       jest.spyOn(model, 'insertMany').mockResolvedValueOnce(mockData as any);
       expect(
         await service.updateData(
-          mockData1.metadata.device_id,
+          mockData1.metadata.deviceId,
           mockData1.metadata.topic,
           [
             {
@@ -153,7 +153,7 @@ describe('DeviceDataService', () => {
       const mockData = {
         timestamp: new Date(),
         metadata: {
-          device_id: 1,
+          deviceId: 1,
           topic: 'test',
         },
         value: 2,
@@ -165,7 +165,7 @@ describe('DeviceDataService', () => {
       ];
       expect(
         await service.getLatestData(
-          mockData.metadata.device_id,
+          mockData.metadata.deviceId,
           mockData.metadata.topic,
         ),
       ).toEqual(mockData);
@@ -175,7 +175,7 @@ describe('DeviceDataService', () => {
       const mockData = {
         timestamp: new Date(),
         metadata: {
-          device_id: 1,
+          deviceId: 1,
           topic: 'test',
         },
         value: 2,
@@ -183,7 +183,7 @@ describe('DeviceDataService', () => {
       mockFindSortLimitExec = [];
       await expect(
         service.getLatestData(
-          mockData.metadata.device_id,
+          mockData.metadata.deviceId,
           mockData.metadata.topic,
         ),
       ).rejects.toThrow(NotFoundException);
@@ -192,14 +192,14 @@ describe('DeviceDataService', () => {
 
   describe('getPeriodicData', () => {
     it('should return the data for the given time period', async () => {
-      const from_past_min = 2;
-      const to_past_min = 0;
-      const date_from = new Date(Date.now() - 60000 * from_past_min);
-      const date_to = new Date(Date.now() - 60000 * to_past_min);
+      const fromPastMin = 2;
+      const toPastMin = 0;
+      const fromDate = new Date(Date.now() - 60000 * fromPastMin);
+      const toDate = new Date(Date.now() - 60000 * toPastMin);
       const mockData = {
         timestamp: new Date(),
         metadata: {
-          device_id: 1,
+          deviceId: 1,
           topic: 'test',
         },
         value: 2,
@@ -211,23 +211,23 @@ describe('DeviceDataService', () => {
       ];
       expect(
         await service.getPeriodicData(
-          mockData.metadata.device_id,
+          mockData.metadata.deviceId,
           mockData.metadata.topic,
-          date_from.toISOString(),
-          date_to.toISOString(),
+          fromDate.toISOString(),
+          toDate.toISOString(),
         ),
       ).toEqual([mockData]);
     });
 
     it('should throw not found if no data found for the given time period', async () => {
-      const from_past_min = 2;
-      const to_past_min = 0;
-      const date_from = new Date(Date.now() - 60000 * from_past_min);
-      const date_to = new Date(Date.now() - 60000 * to_past_min);
+      const fromPastMin = 2;
+      const toPastMin = 0;
+      const fromDate = new Date(Date.now() - 60000 * fromPastMin);
+      const toDate = new Date(Date.now() - 60000 * toPastMin);
       const mockData = {
         timestamp: new Date(),
         metadata: {
-          device_id: 1,
+          deviceId: 1,
           topic: 'test',
         },
         value: 2,
@@ -235,10 +235,10 @@ describe('DeviceDataService', () => {
       mockFindSortExce = [];
       await expect(
         service.getPeriodicData(
-          mockData.metadata.device_id,
+          mockData.metadata.deviceId,
           mockData.metadata.topic,
-          date_from.toISOString(),
-          date_to.toISOString(),
+          fromDate.toISOString(),
+          toDate.toISOString(),
         ),
       ).rejects.toThrow(NotFoundException);
     });

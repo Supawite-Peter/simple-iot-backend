@@ -48,21 +48,21 @@ export class UsersService {
 
   /**
    * Unregisters a user.
-   * @param user_id The user id of the user
+   * @param userId The user id of the user
    * @param password The password
    * @returns User detail of the unregistered user
    * @throws InternalServerErrorException if username or password is undefined
    * @throws NotFoundException if the user does not exist
    * @throws UnauthorizedException if the password is incorrect
    */
-  async unregister(user_id: number, password: string): Promise<UserDetail> {
+  async unregister(userId: number, password: string): Promise<UserDetail> {
     // Check if username and password are defined
-    if (user_id === undefined || password === undefined) {
+    if (userId === undefined || password === undefined) {
       throw new InternalServerErrorException('Undefined username or password');
     }
 
     // Check if user exists
-    const user = await this.findUserId(user_id);
+    const user = await this.findUserId(userId);
     if (!user) {
       throw new NotFoundException('User does not exist');
     }
@@ -75,28 +75,28 @@ export class UsersService {
     // Delete user
     await this.usersRepository.remove(user);
 
-    return this.getUserDetails(user, user_id);
+    return this.getUserDetails(user, userId);
   }
 
   /**
    * Find a user by username.
-   * @param target_name The target username
+   * @param targetName The target username
    * @returns The user if found, undefined otherwise
    */
-  async findUsername(target_name: string): Promise<User | undefined> {
+  async findUsername(targetName: string): Promise<User | undefined> {
     return this.usersRepository
-      .findOneByOrFail({ username: target_name })
+      .findOneByOrFail({ username: targetName })
       .catch(() => undefined);
   }
 
   /**
    * Find a user by id.
-   * @param target_id The target id of the user
+   * @param targetId The target id of the user
    * @returns The user if found, undefined otherwise
    */
-  async findUserId(target_id: number): Promise<User | undefined> {
+  async findUserId(targetId: number): Promise<User | undefined> {
     return this.usersRepository
-      .findOneByOrFail({ id: target_id })
+      .findOneByOrFail({ id: targetId })
       .catch(() => undefined);
   }
 
@@ -113,8 +113,8 @@ export class UsersService {
   private getUserDetails(user: User, id?: number): UserDetail {
     return {
       id: user.id ? user.id : id,
-      first_name: user.firstName,
-      last_name: user.lastName,
+      firstName: user.firstName,
+      lastName: user.lastName,
       username: user.username,
     };
   }

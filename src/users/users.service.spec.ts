@@ -49,19 +49,17 @@ describe('UsersService', () => {
   describe('findUsername', () => {
     it('should return user by username', async () => {
       // Arrange
-      const stubbed_user = {
+      const userStub = {
         id: 1,
         username: 'test_user',
         passwordHash: TEST_CORRECT_HASH,
       };
       jest
         .spyOn(userRepository, 'findOneByOrFail')
-        .mockResolvedValueOnce(stubbed_user as User);
+        .mockResolvedValueOnce(userStub as User);
 
       // Act & Assert
-      expect(await service.findUsername(stubbed_user.username)).toEqual(
-        stubbed_user,
-      );
+      expect(await service.findUsername(userStub.username)).toEqual(userStub);
     });
 
     it('should return undefined if user does not exist', async () => {
@@ -84,17 +82,17 @@ describe('UsersService', () => {
   describe('findUserId', () => {
     it('should return user by userId', async () => {
       // Arrange
-      const stubbed_user = {
+      const userStub = {
         id: 1,
         username: 'test_user',
         passwordHash: TEST_CORRECT_HASH,
       };
       jest
         .spyOn(userRepository, 'findOneByOrFail')
-        .mockResolvedValueOnce(stubbed_user as any);
+        .mockResolvedValueOnce(userStub as any);
 
       // Act & Assert
-      expect(await service.findUserId(1)).toEqual(stubbed_user);
+      expect(await service.findUserId(1)).toEqual(userStub);
     });
 
     it('should return undefined if user id does not exist', async () => {
@@ -123,7 +121,7 @@ describe('UsersService', () => {
 
     it('should add a new user to the service', async () => {
       // Arrange
-      const stubbed_user = {
+      const userStub = {
         id: 1,
         username: 'test_user',
         firstName: 'test',
@@ -132,20 +130,20 @@ describe('UsersService', () => {
       };
       jest
         .spyOn(userRepository, 'create')
-        .mockReturnValueOnce(stubbed_user as User);
+        .mockReturnValueOnce(userStub as User);
 
       // Act & Assert
-      expect(await service.register(stubbed_user.username, TEST_PASS)).toEqual({
-        id: stubbed_user.id,
-        username: stubbed_user.username,
-        first_name: stubbed_user.firstName,
-        last_name: stubbed_user.lastName,
+      expect(await service.register(userStub.username, TEST_PASS)).toEqual({
+        id: userStub.id,
+        username: userStub.username,
+        firstName: userStub.firstName,
+        lastName: userStub.lastName,
       });
     });
 
     it('should throw conflict exception if username already exists', async () => {
       // Arrange
-      const stubbed_user = {
+      const userStub = {
         id: 1,
         username: 'test_user',
         firstName: 'test',
@@ -154,11 +152,11 @@ describe('UsersService', () => {
       };
       jest
         .spyOn(userRepository, 'findOneByOrFail')
-        .mockResolvedValueOnce(stubbed_user as any);
+        .mockResolvedValueOnce(userStub as any);
 
       // Act & Assert
       await expect(
-        service.register(stubbed_user.username, TEST_PASS),
+        service.register(userStub.username, TEST_PASS),
       ).rejects.toThrow(ConflictException);
     });
 
@@ -187,7 +185,7 @@ describe('UsersService', () => {
   describe('unregister', () => {
     it('should remove a user from the service', async () => {
       // Arrange
-      const stubbed_user = {
+      const userStub = {
         id: 1,
         username: 'test_user',
         firstName: 'test',
@@ -196,14 +194,14 @@ describe('UsersService', () => {
       };
       jest
         .spyOn(userRepository, 'findOneByOrFail')
-        .mockResolvedValueOnce(stubbed_user as User);
+        .mockResolvedValueOnce(userStub as User);
 
       // Act & Assert
-      expect(await service.unregister(stubbed_user.id, TEST_PASS)).toEqual({
-        id: stubbed_user.id,
-        username: stubbed_user.username,
-        first_name: stubbed_user.firstName,
-        last_name: stubbed_user.lastName,
+      expect(await service.unregister(userStub.id, TEST_PASS)).toEqual({
+        id: userStub.id,
+        username: userStub.username,
+        firstName: userStub.firstName,
+        lastName: userStub.lastName,
       });
     });
 
@@ -216,7 +214,7 @@ describe('UsersService', () => {
 
     it('should throw an unauthorized exception if password is incorrect', async () => {
       // Arrange
-      const stubbed_user = {
+      const userStub = {
         id: 1,
         username: 'test_user',
         firstName: 'test',
@@ -225,12 +223,12 @@ describe('UsersService', () => {
       };
       jest
         .spyOn(userRepository, 'findOneByOrFail')
-        .mockResolvedValueOnce(stubbed_user as User);
+        .mockResolvedValueOnce(userStub as User);
 
       // Act & Assert
-      await expect(
-        service.unregister(stubbed_user.id, TEST_PASS),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.unregister(userStub.id, TEST_PASS)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw internal exception if input username is undefined', async () => {

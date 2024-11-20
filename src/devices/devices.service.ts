@@ -24,23 +24,23 @@ export class DevicesService {
   ) {}
 
   async register(
-    requester_id: number,
-    device_name: string,
-    device_topics: string[],
+    requesterId: number,
+    deviceName: string,
+    deviceTopics: string[],
   ): Promise<DeviceDetail> {
     // Check if user exists
-    const user = await this.getUser(requester_id);
+    const user = await this.getUser(requesterId);
 
     // Check device name
-    if (device_name === undefined)
+    if (deviceName === undefined)
       throw new BadRequestException('Device name is missing');
 
     // Create topics
-    const topics = await this.createTopics(device_topics);
+    const topics = await this.createTopics(deviceTopics);
 
     // Register device
     const device = this.devicesRepository.create({
-      name: device_name,
+      name: deviceName,
       user: user,
       topics: topics,
     });
@@ -50,21 +50,21 @@ export class DevicesService {
   }
 
   async unregister(
-    requester_id: number,
-    device_id: number,
+    requesterId: number,
+    deviceId: number,
   ): Promise<DeviceDetail> {
     // Check if device exists
-    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(deviceId, requesterId);
 
     // Unregister device
     await this.devicesRepository.remove(device);
 
-    return this.getDeviceDetails(device, device_id);
+    return this.getDeviceDetails(device, deviceId);
   }
 
-  async getDevicesList(requester_id: number): Promise<DeviceDetail[]> {
+  async getDevicesList(requesterId: number): Promise<DeviceDetail[]> {
     // Get & Check if user exists
-    const user = await this.getUser(requester_id);
+    const user = await this.getUser(requesterId);
     // Get devices
     const devices = await this.findDeviceOwner(user.id);
     // Check if devices exist
@@ -74,152 +74,156 @@ export class DevicesService {
   }
 
   async addDeviceTopics(
-    requester_id: number,
-    device_id: number,
-    topics: string[] | string,
+    requesterId: number,
+    deviceId: number,
+    deviceTopics: string[] | string,
   ): Promise<TopicAdd> {
     // Get device
-    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(deviceId, requesterId);
 
     // if topics is a string, convert it to an array
-    if (typeof topics === 'string') {
-      topics = [topics];
+    if (typeof deviceTopics === 'string') {
+      deviceTopics = [deviceTopics];
     }
 
     // Get topics to register
-    const registered_topics = this.getTopicsDetails(device);
-    const to_register_topics: Set<string> = new Set();
-    for (const topic of topics) {
-      if (!registered_topics.includes(topic)) {
-        to_register_topics.add(topic);
+    const registeredTopics = this.getTopicsDetails(device);
+    const toRegisterTopics: Set<string> = new Set();
+    for (const topic of deviceTopics) {
+      if (!registeredTopics.includes(topic)) {
+        toRegisterTopics.add(topic);
       }
     }
-    const topics_added = Array.from(to_register_topics);
+    const addedTopics = Array.from(toRegisterTopics);
 
     // Check if there are topics to register
-    if (topics_added.length === 0) {
+    if (addedTopics.length === 0) {
       throw new BadRequestException('Topics are already registered');
     }
-    await this.createTopics(topics_added, device);
+    await this.createTopics(addedTopics, device);
 
     return {
-      topics_added: topics_added.length,
-      topics: topics_added,
+      topicsAdded: addedTopics.length,
+      topics: addedTopics,
     };
   }
 
   async removeDeviceTopics(
-    requester_id: number,
-    device_id: number,
-    topics: string[] | string,
+    requesterId: number,
+    deviceId: number,
+    deviceTopics: string[] | string,
   ): Promise<TopicRemove> {
     // Get device
-    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(deviceId, requesterId);
 
     // if topics is a string, convert it to an array
-    if (typeof topics === 'string') {
-      topics = [topics];
+    if (typeof deviceTopics === 'string') {
+      deviceTopics = [deviceTopics];
     }
 
     // Get topics that will be removed
-    const topics_to_removed = [];
+    const toRemovedTopics = [];
     for (const topic of device.topics) {
-      if (topics.includes(topic.name)) topics_to_removed.push(topic);
+      if (deviceTopics.includes(topic.name)) toRemovedTopics.push(topic);
     }
 
     // Check if there are topics to remove
-    if (topics_to_removed.length === 0) {
+    if (toRemovedTopics.length === 0) {
       throw new BadRequestException('Topics are not registered');
     }
 
     // Remove topics
-    await this.topicsRepository.remove(topics_to_removed);
+    await this.topicsRepository.remove(toRemovedTopics);
 
     return {
-      topics_removed: topics_to_removed.length,
-      topics: topics_to_removed.map((topic) => topic.name),
+      topicsRemoved: toRemovedTopics.length,
+      topics: toRemovedTopics.map((topic) => topic.name),
     };
   }
 
   async checkDeviceTopic(
-    requester_id: number,
-    device_id: number,
-    topic: string,
+    requesterId: number,
+    deviceId: number,
+    deviceTopic: string,
   ): Promise<boolean> {
     // Get device
-    const device = await this.getAndCheckDeviceOwner(device_id, requester_id);
+    const device = await this.getAndCheckDeviceOwner(deviceId, requesterId);
 
     // Check if topic is registered
-    if (!device.topics.map((t) => t.name).includes(topic)) {
+    if (!device.topics.map((t) => t.name).includes(deviceTopic)) {
       throw new BadRequestException('Topic is not registered');
     }
 
     return true;
   }
 
-  private async findDeviceOwner(owner_id: number): Promise<Device[]> {
+  private async findDeviceOwner(ownerId: number): Promise<Device[]> {
     return this.devicesRepository
       .createQueryBuilder('device')
       .leftJoinAndSelect('device.user', 'user')
       .leftJoinAndSelect('device.topics', 'topic')
-      .where('user.id = :user_id', { user_id: owner_id })
+      .where('user.id = :user_id', { user_id: ownerId })
       .getMany();
   }
 
-  private async getUser(requester_id: number): Promise<User> {
-    const user = await this.usersService.findUserId(requester_id);
+  private async getUser(requesterId: number): Promise<User> {
+    // Get & Check if user exists
+    const user = await this.usersService.findUserId(requesterId);
     if (!user) throw new NotFoundException('User not found');
+
     return user;
   }
 
   private async getAndCheckDeviceOwner(
-    device_id: number,
-    owner_id: number,
+    deviceId: number,
+    ownerId: number,
   ): Promise<Device> {
+    // Get & Check if device exists
     const device = await this.devicesRepository
       .createQueryBuilder('device')
       .leftJoinAndSelect('device.user', 'user')
       .leftJoinAndSelect('device.topics', 'topic')
-      .where('device.id = :id', { id: device_id })
-      .andWhere('user.id = :user_id', { user_id: owner_id })
+      .where('device.id = :id', { id: deviceId })
+      .andWhere('user.id = :user_id', { user_id: ownerId })
       .getOne();
     if (!device)
       throw new NotFoundException(
-        `Device with id ${device_id} was not found for user with id ${owner_id}`,
+        `Device with id ${deviceId} was not found for user with id ${ownerId}`,
       );
+
     return device;
   }
 
   private async createTopics(
-    topics_name: string[],
+    topicsName: string[],
     device?: Device,
   ): Promise<Topic[]> {
     // Initialize topics array
-    const topics_created = [] as Topic[];
+    const createdTopics = [] as Topic[];
 
-    // Check if topics_name is empty
-    if (topics_name.length === 0 || topics_name === undefined)
-      return topics_created;
+    // Check if topicsName is empty
+    if (topicsName.length === 0 || topicsName === undefined)
+      return createdTopics;
 
     // Create topics
-    for (const topic of topics_name)
-      topics_created.push(
+    for (const topic of topicsName)
+      createdTopics.push(
         device != null
           ? this.topicsRepository.create({ name: topic, device: device })
           : this.topicsRepository.create({ name: topic }),
       );
 
     // Save topics if device is registered to the topics
-    if (device != null) await this.topicsRepository.save(topics_created);
+    if (device != null) await this.topicsRepository.save(createdTopics);
 
-    return topics_created;
+    return createdTopics;
   }
 
   private getDeviceDetails(device: Device, id?: number): DeviceDetail {
     return {
       id: device.id ? device.id : id,
       name: device.name,
-      user_id: device.user.id,
+      userId: device.user.id,
       serial: device.serial,
       topics: this.getTopicsDetails(device),
     };

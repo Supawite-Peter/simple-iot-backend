@@ -19,23 +19,23 @@ describe('DevicesService', () => {
   // topicId: 1,2,3,4 => exist in database
   // else => not exist in database
   const device1StubInfo = {
-    owner_id: 1,
-    owner_name: 'exist1',
-    owner_pass: 'hashpassword1',
-    device_id: 1,
-    device_name: 'device1',
-    device_topics: {
+    ownerId: 1,
+    ownerName: 'exist1',
+    ownerPass: 'hashpassword1',
+    deviceId: 1,
+    deviceName: 'device1',
+    deviceTopics: {
       id: [1, 2],
       name: ['topic1', 'topic2'],
     },
   };
   const device2StubInfo = {
-    owner_id: 2,
-    owner_name: 'exist2',
-    owner_pass: 'hashpassword2',
-    device_id: 2,
-    device_name: 'device2',
-    device_topics: {
+    ownerId: 2,
+    ownerName: 'exist2',
+    ownerPass: 'hashpassword2',
+    deviceId: 2,
+    deviceName: 'device2',
+    deviceTopics: {
       id: [3, 4],
       name: ['topic3', 'topic4'],
     },
@@ -71,10 +71,10 @@ describe('DevicesService', () => {
 
   const createDeviceStubFromInfo = (info: any) => {
     return createDeviceStub(
-      info.device_id,
-      info.device_name,
-      createUserStub(info.owner_id, info.owner_name, info.owner_pass),
-      createTopicsStub(info.device_topics.id, info.device_topics.name),
+      info.deviceId,
+      info.deviceName,
+      createUserStub(info.ownerId, info.ownerName, info.ownerPass),
+      createTopicsStub(info.deviceTopics.id, info.deviceTopics.name),
     );
   };
 
@@ -119,11 +119,11 @@ describe('DevicesService', () => {
                     .fn()
                     .mockImplementation((impression1, where1) => ({
                       getMany: jest.fn().mockImplementation(() => {
-                        if (where1.user_id === device1StubInfo.owner_id)
+                        if (where1.user_id === device1StubInfo.ownerId)
                           return Promise.resolve([
                             createDeviceStubFromInfo(device1StubInfo),
                           ]);
-                        else if (where1.user_id === device2StubInfo.owner_id)
+                        else if (where1.user_id === device2StubInfo.ownerId)
                           return Promise.resolve([
                             createDeviceStubFromInfo(device2StubInfo),
                           ]);
@@ -134,15 +134,15 @@ describe('DevicesService', () => {
                         .mockImplementation((impression2, where2) => ({
                           getOne: jest.fn().mockImplementation(() => {
                             if (
-                              where1.id === device1StubInfo.device_id &&
-                              where2.user_id === device1StubInfo.owner_id
+                              where1.id === device1StubInfo.deviceId &&
+                              where2.user_id === device1StubInfo.ownerId
                             )
                               return Promise.resolve(
                                 createDeviceStubFromInfo(device1StubInfo),
                               );
                             else if (
-                              where1.id === device2StubInfo.device_id &&
-                              where2.user_id === device2StubInfo.owner_id
+                              where1.id === device2StubInfo.deviceId &&
+                              where2.user_id === device2StubInfo.ownerId
                             )
                               return Promise.resolve(
                                 createDeviceStubFromInfo(device2StubInfo),
@@ -175,17 +175,17 @@ describe('DevicesService', () => {
           return {
             findUserId: jest.fn().mockImplementation((userId) => {
               switch (userId) {
-                case device1StubInfo.owner_id:
+                case device1StubInfo.ownerId:
                   return Promise.resolve({
-                    id: device1StubInfo.owner_id,
-                    username: device1StubInfo.owner_name,
-                    passwordHash: device1StubInfo.owner_pass,
+                    id: device1StubInfo.ownerId,
+                    username: device1StubInfo.ownerName,
+                    passwordHash: device1StubInfo.ownerPass,
                   } as User);
-                case device2StubInfo.owner_id:
+                case device2StubInfo.ownerId:
                   return Promise.resolve({
-                    id: device2StubInfo.owner_id,
-                    username: device2StubInfo.owner_name,
-                    passwordHash: device2StubInfo.owner_pass,
+                    id: device2StubInfo.ownerId,
+                    username: device2StubInfo.ownerName,
+                    passwordHash: device2StubInfo.ownerPass,
                   } as User);
                 case user3StubInfo.id:
                   return Promise.resolve({
@@ -217,19 +217,19 @@ describe('DevicesService', () => {
     it('should register a new device to a requester', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_name: 'New Device',
-        device_topics: ['NewTopic1', 'NewTopic2'],
+        requesterId: device1StubInfo.ownerId,
+        deviceName: 'New Device',
+        deviceTopics: ['NewTopic1', 'NewTopic2'],
       };
       const userStub = createUserStub(
-        device1StubInfo.owner_id,
-        device1StubInfo.owner_name,
-        device1StubInfo.owner_pass,
+        device1StubInfo.ownerId,
+        device1StubInfo.ownerName,
+        device1StubInfo.ownerPass,
       );
-      const topicsStub = createTopicsStub([7, 8], input.device_topics);
+      const topicsStub = createTopicsStub([7, 8], input.deviceTopics);
       jest.spyOn(deviceRepository, 'create').mockReturnValueOnce({
         id: 99,
-        name: input.device_name,
+        name: input.deviceName,
         user: userStub,
         topics: topicsStub,
       } as Device);
@@ -237,34 +237,34 @@ describe('DevicesService', () => {
       // Act & Assert
       expect(
         await service.register(
-          input.requester_id,
-          input.device_name,
-          input.device_topics,
+          input.requesterId,
+          input.deviceName,
+          input.deviceTopics,
         ),
       ).toEqual({
         id: 99,
-        name: input.device_name,
+        name: input.deviceName,
         serial: undefined,
-        user_id: input.requester_id,
-        topics: input.device_topics,
+        userId: input.requesterId,
+        topics: input.deviceTopics,
       });
     });
 
     it('should able to register when no topics are provided', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_name: 'New Device 2',
-        device_topics: [],
+        requesterId: device1StubInfo.ownerId,
+        deviceName: 'New Device 2',
+        deviceTopics: [],
       };
       const userStub = createUserStub(
-        device1StubInfo.owner_id,
-        device1StubInfo.owner_name,
-        device1StubInfo.owner_pass,
+        device1StubInfo.ownerId,
+        device1StubInfo.ownerName,
+        device1StubInfo.ownerPass,
       );
       jest.spyOn(deviceRepository, 'create').mockReturnValueOnce({
         id: 100,
-        name: input.device_name,
+        name: input.deviceName,
         user: userStub,
         topics: [],
       } as Device);
@@ -272,33 +272,33 @@ describe('DevicesService', () => {
       // Act & Assert
       expect(
         await service.register(
-          input.requester_id,
-          input.device_name,
-          input.device_topics,
+          input.requesterId,
+          input.deviceName,
+          input.deviceTopics,
         ),
       ).toEqual({
         id: 100,
-        name: input.device_name,
+        name: input.deviceName,
         serial: undefined,
-        user_id: input.requester_id,
-        topics: input.device_topics,
+        userId: input.requesterId,
+        topics: input.deviceTopics,
       });
     });
 
     it('should throw not found if requester does not exist', async () => {
       // Arrange
       const input = {
-        requester_id: 4,
-        device_name: 'New Device 3',
-        device_topics: ['NewTopic3', 'NewTopic4'],
+        requesterId: 4,
+        deviceName: 'New Device 3',
+        deviceTopics: ['NewTopic3', 'NewTopic4'],
       };
 
       // Act & Assert
       await expect(
         service.register(
-          input.requester_id,
-          input.device_name,
-          input.device_topics,
+          input.requesterId,
+          input.deviceName,
+          input.deviceTopics,
         ),
       ).rejects.toThrow(NotFoundException);
     });
@@ -306,17 +306,17 @@ describe('DevicesService', () => {
     it('should throw bad request if device name is missing', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_name: undefined,
-        device_topics: ['NewTopic5', 'NewTopic6'],
+        requesterId: device1StubInfo.ownerId,
+        deviceName: undefined,
+        deviceTopics: ['NewTopic5', 'NewTopic6'],
       };
 
       // Act & Assert
       await expect(
         service.register(
-          input.requester_id,
-          input.device_name,
-          input.device_topics,
+          input.requesterId,
+          input.deviceName,
+          input.deviceTopics,
         ),
       ).rejects.toThrow(BadRequestException);
     });
@@ -327,15 +327,15 @@ describe('DevicesService', () => {
       // Act & Assert
       expect(
         await service.unregister(
-          device1StubInfo.owner_id,
-          device1StubInfo.device_id,
+          device1StubInfo.ownerId,
+          device1StubInfo.deviceId,
         ),
       ).toEqual({
-        id: device1StubInfo.device_id,
-        name: device1StubInfo.device_name,
+        id: device1StubInfo.deviceId,
+        name: device1StubInfo.deviceName,
         serial: undefined,
-        user_id: device1StubInfo.owner_id,
-        topics: device1StubInfo.device_topics.name,
+        userId: device1StubInfo.ownerId,
+        topics: device1StubInfo.deviceTopics.name,
       });
     });
 
@@ -358,13 +358,13 @@ describe('DevicesService', () => {
   describe('getDevicesList', () => {
     it('should return a list of devices registered by a requester', async () => {
       // Act & Assert
-      expect(await service.getDevicesList(device1StubInfo.owner_id)).toEqual([
+      expect(await service.getDevicesList(device1StubInfo.ownerId)).toEqual([
         {
-          id: device1StubInfo.device_id,
-          name: device1StubInfo.device_name,
+          id: device1StubInfo.deviceId,
+          name: device1StubInfo.deviceName,
           serial: undefined,
-          user_id: device1StubInfo.owner_id,
-          topics: device1StubInfo.device_topics.name,
+          userId: device1StubInfo.ownerId,
+          topics: device1StubInfo.deviceTopics.name,
         },
       ]);
     });
@@ -387,20 +387,20 @@ describe('DevicesService', () => {
     it('should add topics to a device (input topics is a string)', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: device1StubInfo.device_id,
+        requesterId: device1StubInfo.ownerId,
+        deviceId: device1StubInfo.deviceId,
         topics: 'NewTopic7',
       };
 
       // Act & Assert
       expect(
         await service.addDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).toEqual({
-        topics_added: 1,
+        topicsAdded: 1,
         topics: [input.topics],
       });
     });
@@ -408,20 +408,20 @@ describe('DevicesService', () => {
     it('should add topics to a device (input topics is an array)', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: device1StubInfo.device_id,
+        requesterId: device1StubInfo.ownerId,
+        deviceId: device1StubInfo.deviceId,
         topics: ['NewTopic8', 'NewTopic9'],
       };
 
       // Act & Assert
       expect(
         await service.addDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).toEqual({
-        topics_added: 2,
+        topicsAdded: 2,
         topics: input.topics,
       });
     });
@@ -429,16 +429,16 @@ describe('DevicesService', () => {
     it('should throw bad request if all topics are already registered', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: device1StubInfo.device_id,
-        topics: device1StubInfo.device_topics.name,
+        requesterId: device1StubInfo.ownerId,
+        deviceId: device1StubInfo.deviceId,
+        topics: device1StubInfo.deviceTopics.name,
       };
 
       // Act & Assert
       await expect(
         service.addDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).rejects.toThrow(BadRequestException);
@@ -447,16 +447,16 @@ describe('DevicesService', () => {
     it('should throw not found if requester does not exist', async () => {
       // Arrange
       const input = {
-        requester_id: 4,
-        device_id: device1StubInfo.device_id,
+        requesterId: 4,
+        deviceId: device1StubInfo.deviceId,
         topics: ['NewTopic10'],
       };
 
       // Act & Assert
       await expect(
         service.addDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).rejects.toThrow(NotFoundException);
@@ -465,16 +465,16 @@ describe('DevicesService', () => {
     it('should throw not found if device does not exist', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: 5,
+        requesterId: device1StubInfo.ownerId,
+        deviceId: 5,
         topics: ['NewTopic11'],
       };
 
       // Act & Assert
       await expect(
         service.addDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).rejects.toThrow(NotFoundException);
@@ -483,16 +483,16 @@ describe('DevicesService', () => {
     it('should throw not found if requester is not the owner', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: device2StubInfo.device_id,
+        requesterId: device1StubInfo.ownerId,
+        deviceId: device2StubInfo.deviceId,
         topics: ['NewTopic12'],
       };
 
       // Act & Assert
       await expect(
         service.addDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).rejects.toThrow(NotFoundException);
@@ -503,58 +503,58 @@ describe('DevicesService', () => {
     it('should remove topics from a device (input topics is a string)', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: device1StubInfo.device_id,
-        topics: device1StubInfo.device_topics.name[0],
+        requesterId: device1StubInfo.ownerId,
+        deviceId: device1StubInfo.deviceId,
+        topics: device1StubInfo.deviceTopics.name[0],
       };
 
       // Act & Assert
       expect(
         await service.removeDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).toEqual({
-        topics_removed: 1,
-        topics: [device1StubInfo.device_topics.name[0]],
+        topicsRemoved: 1,
+        topics: [device1StubInfo.deviceTopics.name[0]],
       });
     });
 
     it('should remove topics from a device (input topics is an array)', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: device1StubInfo.device_id,
-        topics: device1StubInfo.device_topics.name,
+        requesterId: device1StubInfo.ownerId,
+        deviceId: device1StubInfo.deviceId,
+        topics: device1StubInfo.deviceTopics.name,
       };
 
       // Act & Assert
       expect(
         await service.removeDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).toEqual({
-        topics_removed: device1StubInfo.device_topics.name.length,
-        topics: device1StubInfo.device_topics.name,
+        topicsRemoved: device1StubInfo.deviceTopics.name.length,
+        topics: device1StubInfo.deviceTopics.name,
       });
     });
 
     it('should throw bad request if no topics to be removed', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: device1StubInfo.device_id,
-        topics: device2StubInfo.device_topics.name,
+        requesterId: device1StubInfo.ownerId,
+        deviceId: device1StubInfo.deviceId,
+        topics: device2StubInfo.deviceTopics.name,
       };
 
       // Act & Assert
       await expect(
         service.removeDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).rejects.toThrow(BadRequestException);
@@ -563,16 +563,16 @@ describe('DevicesService', () => {
     it('should throw not found if requester does not exist', async () => {
       // Arrange
       const input = {
-        requester_id: 3,
-        device_id: device1StubInfo.device_id,
-        topics: device1StubInfo.device_topics.name,
+        requesterId: 3,
+        deviceId: device1StubInfo.deviceId,
+        topics: device1StubInfo.deviceTopics.name,
       };
 
       // Act & Assert
       await expect(
         service.removeDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).rejects.toThrow(NotFoundException);
@@ -581,16 +581,16 @@ describe('DevicesService', () => {
     it('should throw not found if device does not exist', async () => {
       // Arrange
       const input = {
-        requester_id: device1StubInfo.owner_id,
-        device_id: 3,
-        topics: device1StubInfo.device_topics.name,
+        requesterId: device1StubInfo.ownerId,
+        deviceId: 3,
+        topics: device1StubInfo.deviceTopics.name,
       };
 
       // Act & Assert
       await expect(
         service.removeDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).rejects.toThrow(NotFoundException);
@@ -598,15 +598,15 @@ describe('DevicesService', () => {
 
     it('should throw not found if requester is not the owner', async () => {
       const input = {
-        requester_id: device2StubInfo.owner_id,
-        device_id: device1StubInfo.device_id,
-        topics: device1StubInfo.device_topics.name,
+        requesterId: device2StubInfo.ownerId,
+        deviceId: device1StubInfo.deviceId,
+        topics: device1StubInfo.deviceTopics.name,
       };
 
       await expect(
         service.removeDeviceTopics(
-          input.requester_id,
-          input.device_id,
+          input.requesterId,
+          input.deviceId,
           input.topics,
         ),
       ).rejects.toThrow(NotFoundException);
